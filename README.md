@@ -1,151 +1,74 @@
-# GEMA - Generasi Muda Informatika Landing Page
-## SMA Wahidiyah Kediri - Pondok Pesantren Kedunglo
+# GEMA - Generasi Muda Informatika
 
-Landing page modern untuk komunitas GEMA (Generasi Muda Informatika) di SMA Wahidiyah Kediri yang dibangun dengan Next.js, TypeScript, dan Tailwind CSS.
+Website resmi program GEMA (Generasi Muda Informatika) SMA Wahidiyah Kediri yang memadukan **Landing Page** yang menarik dengan **Admin Panel** yang terintegrasi penuh untuk manajemen konten.
 
-## 🚀 Fitur
+## 🌟 Fitur Utama
 
-- **Hero Section** - Bagian utama dengan gradasi warna biru-hijau dan animasi menarik
-- **Tentang GEMA** - Informasi komunitas dengan ilustrasi vector
-- **Visi & Misi** - Grid 2 kolom dengan ikon yang representatif
-- **Kegiatan Utama** - 4 card program unggulan:
-  - 👨‍💻 Kelas Coding
-  - 🛠️ Workshop Teknologi  
-  - 🏆 Kompetisi IT
-  - 💡 Proyek Kreatif
-- **Manfaat Bergabung** - Keuntungan yang didapat peserta
-- **Testimoni** - Feedback dari alumni
-- **Call to Action** - Ajakan untuk bergabung
-- **Footer** - Informasi kontak dan sosial media
+### 🎨 Landing Page
+- **Hero Section** dengan statistik real-time dari database
+- **Pengumuman Terbaru** langsung dari admin panel
+- **Kegiatan Mendatang** dengan informasi detail
+- **Galeri Kegiatan** yang dapat dikelola admin
+- **Form Pendaftaran** terintegrasi dengan admin panel
+- **Responsive Design** untuk semua perangkat
 
-## 🎨 Desain
+### 🛠️ Admin Panel
+- **Dashboard** dengan overview dan statistik
+- **Kelola Kontak** - lihat dan respon pesan masuk
+- **Kelola Pendaftaran** - approve/reject pendaftaran siswa
+- **Kelola Kegiatan** - CRUD kegiatan dan workshop
+- **Kelola Galeri** - upload dan kategorisasi foto
+- **Kelola Pengumuman** - buat dan publikasi pengumuman
+- **Kelola Admin** - user management dengan role-based access
+- **Pengaturan Sistem** - konfigurasi aplikasi
 
-- **Warna Utama**: Gradasi biru ke hijau neon
-- **Typography**: Font modern dan readable
-- **Animasi**: Smooth transitions menggunakan Framer Motion
-- **Responsive**: Optimized untuk semua ukuran device
-- **Icons**: Menggunakan Lucide React icons
+## � Tech Stack
 
-## 🛠️ Teknologi
+- **Frontend**: Next.js 15, React 19, TypeScript
+- **Styling**: Tailwind CSS 4
+- **Database**: SQLite + Prisma ORM
+- **Authentication**: NextAuth.js dengan Credentials Provider
+- **Animation**: Framer Motion
+- **Icons**: Lucide React
 
-- [Next.js 15](https://nextjs.org/) - React framework
-- [TypeScript](https://www.typescriptlang.org/) - Type safety
-- [Tailwind CSS](https://tailwindcss.com/) - Utility-first CSS
-- [Framer Motion](https://www.framer.com/motion/) - Animation library
-- [Lucide React](https://lucide.dev/) - Icon library
+## � Login Admin
 
-## 📦 Instalasi
+Setelah seeding database, gunakan credentials berikut:
 
-1. Clone repository:
-```bash
-git clone [repository-url]
-cd landing-page-v2
-```
+**Super Admin:**
+- Email: `admin@smawahidiyah.edu`
+- Password: `admin123`
 
-2. Install dependencies:
-```bash
-npm install
-```
+**Regular Admin:**
+- Email: `gema@smawahidiyah.edu`
+- Password: `admin123`
 
-3. Jalankan development server:
-```bash
-npm run dev
-```
+## 🎯 Fitur Sinkronisasi
 
-4. Buka browser di [http://localhost:3000](http://localhost:3000)
+### Data Real-time
+- **Statistik Hero Section**: Menampilkan jumlah pendaftar, kegiatan aktif, dll dari database
+- **Pengumuman**: Langsung dari admin panel, hanya yang dipublikasi yang tampil
+- **Kegiatan**: Kegiatan aktif dari admin panel ditampilkan di landing page
+- **Galeri**: Foto yang diupload admin langsung muncul di landing page
 
-## 🏗️ Build Production
+### Form Terintegrasi
+- **Pendaftaran Landing Page** → **Data Admin Panel**
+- **Status Tracking**: Admin dapat approve/reject pendaftaran
+- **Notifikasi**: Form berhasil dikirim dengan feedback ke user
 
-```bash
-npm run build
-npm start
-```
+## � Responsive Design
 
-## 🚀 Deploy ke Vercel
+- **Mobile First**: Optimized untuk mobile devices
+- **Tablet Support**: Layout menyesuaikan tablet
+- **Desktop**: Full experience di desktop
+- **Admin Panel**: Responsive admin interface
 
-**Lihat panduan lengkap deployment di [DEPLOYMENT.md](./DEPLOYMENT.md)**
+## 📞 Contact
 
-### Quick Deploy
-
-1. **One-Click Deploy:**
-   [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/username/gema-landing-page)
-
-2. **Manual Deploy:**
-```bash
-# Install Vercel CLI
-npm install -g vercel
-
-# Login
-vercel login
-
-# Deploy preview
-npm run deploy-preview
-
-# Deploy production  
-npm run deploy
-```
-
-3. **GitHub Integration (Recommended):**
-   - Push ke GitHub repository
-   - Connect repository di [vercel.com](https://vercel.com)
-   - Auto-deploy setiap push ke main branch
-
-## 📝 Scripts
-
-- `npm run dev` - Menjalankan development server
-- `npm run build` - Build untuk production  
-- `npm run start` - Menjalankan production server
-- `npm run lint` - Cek ESLint issues
-
-## 🔧 Kustomisasi
-
-### Mengubah Konten
-
-- **Hero Section**: Edit teks di `src/app/page.tsx` bagian Hero Section
-- **Kegiatan**: Modify array `activities` untuk menambah/mengubah program
-- **Kontak**: Update informasi kontak di bagian Footer
-- **Testimoni**: Ganti testimoni di bagian Testimonial section
-
-### Mengubah Styling
-
-- **Warna**: Edit file `tailwind.config.ts` untuk custom colors
-- **Font**: Update `src/app/layout.tsx` untuk menggunakan font berbeda
-- **Spacing**: Adjust padding/margin di komponen sesuai kebutuhan
-
-## 📱 Responsive Design
-
-Landing page ini fully responsive dengan breakpoint:
-- Mobile: < 768px
-- Tablet: 768px - 1024px  
-- Desktop: > 1024px
-
-## 🎯 Target Audience
-
-Landing page ini dirancang untuk:
-- Siswa SMP yang tertarik melanjutkan ke SMA dengan program teknologi
-- Calon santri yang ingin menggabungkan pendidikan agama dan teknologi
-- Orang tua yang mencari sekolah berbasis pesantren dengan program informatika unggulan
-- Masyarakat Kediri dan sekitarnya yang ingin tahu tentang program GEMA
-
-## 🏫 Tentang SMA Wahidiyah Kediri
-
-**SMA Wahidiyah** adalah sekolah menengah atas yang berada di lingkungan **Pondok Pesantren Kedunglo**, Kediri, Jawa Timur. Sekolah ini menggabungkan pendidikan formal dengan nilai-nilai pesantren, termasuk program unggulan **GEMA (Generasi Muda Informatika)** untuk mengembangkan kemampuan teknologi siswa.
-
-### 📍 Informasi Sekolah:
-- **Alamat**: Jl. KH. Wahid Hasyim, Ponpes Kedunglo, Bandar Lor, Kec. Mojoroto, Kota Kediri, Jawa Timur
-- **Pendaftaran**: SPMB Kedunglo - [spmbkedunglo.com](https://spmbkedunglo.com)
-- **Instagram**: [@smawahidiyah_official](https://instagram.com/smawahidiyah_official)
 - **Email**: smaswahidiyah@gmail.com
-- **Linktree**: [linktr.ee/smawahidiyah](https://linktr.ee/smawahidiyah)
-
-## 📞 Kontak
-
-Untuk informasi lebih lanjut tentang GEMA dan pendaftaran SMA Wahidiyah:
-- **Email**: smaswahidiyah@gmail.com
-- **Pendaftaran**: [SPMB Kedunglo](https://spmbkedunglo.com)
+- **Website**: https://spmbkedunglo.com
 - **Instagram**: [@smawahidiyah_official](https://instagram.com/smawahidiyah_official)
-- **Alamat**: Jl. KH. Wahid Hasyim, Ponpes Kedunglo, Bandar Lor, Kec. Mojoroto, Kota Kediri, Jawa Timur
 
-## 📄 License
+---
 
-© 2024 GEMA - Generasi Muda Informatika | SMA Wahidiyah Kediri. All rights reserved.
+⭐ **Website GEMA telah berhasil disinkronkan antara Landing Page dan Admin Panel!**

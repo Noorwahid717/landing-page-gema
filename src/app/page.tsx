@@ -1,6 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Image from "next/image";
+import { useState, useEffect } from "react";
+import RegistrationForm from "@/components/RegistrationForm";
+import FloatingChat from "@/components/FloatingChat";
+import VideoLogo from "@/components/VideoLogo";
+import AnimatedLogoDemo from "@/components/AnimatedLogoDemo";
 import { 
   Code, 
   Rocket, 
@@ -12,10 +18,100 @@ import {
   Wrench,
   Instagram,
   Mail,
-  MapPin
+  MapPin,
+  Calendar,
+  MapPinIcon,
+  ExternalLink,
+  ChevronRight,
+  Star
 } from "lucide-react";
 
+interface Activity {
+  id: string;
+  title: string;
+  description: string;
+  date: string;
+  time: string;
+  location: string;
+  capacity: number;
+  participants: number;
+  category: string;
+}
+
+interface Announcement {
+  id: string;
+  title: string;
+  content: string;
+  type: string;
+  publishedAt: string;
+}
+
+interface GalleryItem {
+  id: string;
+  title: string;
+  image: string;
+  category: string;
+  description: string;
+}
+
+interface Stats {
+  totalMembers: number;
+  activeProjects: number;
+  completedWorkshops: number;
+  achievements: number;
+}
+
 export default function Home() {
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [gallery, setGallery] = useState<GalleryItem[]>([]);
+  const [stats, setStats] = useState<Stats>({
+    totalMembers: 0,
+    activeProjects: 0,
+    completedWorkshops: 0,
+    achievements: 0
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchPublicData();
+  }, []);
+
+  const fetchPublicData = async () => {
+    try {
+      const response = await fetch('/api/public');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setActivities(data.data.activities || []);
+          setAnnouncements(data.data.announcements || []);
+          setGallery(data.data.gallery || []);
+          setStats(data.data.stats || {});
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching public data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('id-ID', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const getAnnouncementIcon = (type: string) => {
+    switch (type) {
+      case 'event': return '📅';
+      case 'achievement': return '🏆';
+      case 'info': return 'ℹ️';
+      default: return '📢';
+    }
+  };
   return (
     <main className="min-h-screen bg-white">
       {/* Hero Section */}
@@ -34,8 +130,15 @@ export default function Home() {
             transition={{ duration: 0.6 }}
             className="text-center mb-8"
           >
-            <div className="w-20 h-20 bg-white rounded-full mx-auto flex items-center justify-center mb-4">
-              <Code className="w-10 h-10 text-blue-600" />
+            <div className="w-20 h-20 bg-white rounded-full mx-auto flex items-center justify-center mb-4 p-2 shadow-lg">
+              <Image
+                src="/gema.svg"
+                alt="GEMA - Generasi Muda Informatika Logo"
+                width={60}
+                height={60}
+                className="w-14 h-14"
+                priority
+              />
             </div>
             <h2 className="text-2xl font-bold text-white">GEMA</h2>
           </motion.div>
@@ -56,12 +159,37 @@ export default function Home() {
               initial={{ opacity: 0, y: 50 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
-              className="text-xl md:text-2xl mb-12 opacity-90"
+              className="text-xl md:text-2xl mb-8 opacity-90"
             >
               Wadah kreatif untuk belajar, berinovasi, dan berkembang di dunia teknologi.
               <br />
               <span className="text-lg">SMA Wahidiyah Kediri - Pondok Pesantren Kedunglo</span>
             </motion.p>
+
+            {/* Live Stats */}
+            <motion.div 
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.5 }}
+              className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 max-w-2xl mx-auto"
+            >
+              <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4 border border-white/30">
+                <div className="text-2xl font-bold">{stats.totalMembers}</div>
+                <div className="text-sm opacity-90">Anggota Aktif</div>
+              </div>
+              <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4 border border-white/30">
+                <div className="text-2xl font-bold">{stats.activeProjects}</div>
+                <div className="text-sm opacity-90">Proyek Aktif</div>
+              </div>
+              <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4 border border-white/30">
+                <div className="text-2xl font-bold">{stats.completedWorkshops}</div>
+                <div className="text-sm opacity-90">Workshop Selesai</div>
+              </div>
+              <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4 border border-white/30">
+                <div className="text-2xl font-bold">{stats.achievements}</div>
+                <div className="text-sm opacity-90">Prestasi</div>
+              </div>
+            </motion.div>
             
             <motion.div 
               initial={{ opacity: 0, y: 50 }}
@@ -73,12 +201,13 @@ export default function Home() {
                 href="https://spmbkedunglo.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-green-400 hover:bg-green-500 text-black font-bold py-4 px-8 rounded-full text-lg transition-all duration-300 transform hover:scale-105 inline-block text-center"
+                className="bg-green-400 hover:bg-green-500 text-black font-bold py-4 px-8 rounded-full text-lg transition-all duration-300 transform hover:scale-105 inline-flex items-center justify-center gap-2"
               >
+                <ExternalLink className="w-5 h-5" />
                 Daftar Sekarang
               </a>
               <a
-                href="#tentang"
+                href="#daftar"
                 className="border-2 border-white text-white hover:bg-white hover:text-blue-600 font-bold py-4 px-8 rounded-full text-lg transition-all duration-300 inline-block text-center"
               >
                 Pelajari Lebih Lanjut
@@ -96,13 +225,19 @@ export default function Home() {
             <div className="relative">
               <div className="w-80 h-80 bg-white/10 rounded-2xl backdrop-blur-sm border border-white/20 p-8 flex items-center justify-center">
                 <div className="grid grid-cols-3 gap-4">
-                  <div className="w-16 h-16 bg-green-400 rounded-lg flex items-center justify-center">
-                    <Code className="w-8 h-8 text-black" />
-                  </div>
-                  <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center">
-                    <Users className="w-8 h-8 text-blue-600" />
+                  <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center p-2 shadow-lg">
+                    <Image
+                      src="/gema.svg"
+                      alt="GEMA Logo"
+                      width={48}
+                      height={48}
+                      className="w-12 h-12"
+                    />
                   </div>
                   <div className="w-16 h-16 bg-blue-300 rounded-lg flex items-center justify-center">
+                    <Users className="w-8 h-8 text-black" />
+                  </div>
+                  <div className="w-16 h-16 bg-green-400 rounded-lg flex items-center justify-center">
                     <Rocket className="w-8 h-8 text-black" />
                   </div>
                   <div className="w-16 h-16 bg-yellow-400 rounded-lg flex items-center justify-center">
@@ -121,7 +256,125 @@ export default function Home() {
         </div>
       </section>
 
-      {/* About Section */}
+      {/* Video Logo Animation Section */}
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-6">
+          <motion.div 
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl font-bold text-gray-800 mb-4">GEMA Animation</h2>
+            <p className="text-xl text-gray-600">Animasi logo resmi Generasi Muda Informatika</p>
+          </motion.div>
+
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.8 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="flex justify-center"
+          >
+            {/* Try to load video first, fallback to animated demo */}
+            <div className="relative">
+              <VideoLogo
+                src="/videos/gema-animation.mp4"
+                width={600}
+                height={400}
+                autoplay={true}
+                loop={true}
+                muted={true}
+                controls={false}
+                className="max-w-full"
+                fallbackImage="/gema.svg"
+              />
+              
+              {/* Animated Demo as backup */}
+              <div className="mt-8">
+                <AnimatedLogoDemo />
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            viewport={{ once: true }}
+            className="text-center mt-12 max-w-4xl mx-auto"
+          >
+            <div className="grid md:grid-cols-3 gap-8">
+              <div className="bg-blue-50 rounded-xl p-6">
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Code className="w-6 h-6 text-blue-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-2">Innovation</h3>
+                <p className="text-gray-600">Berinovasi dengan teknologi terdepan untuk masa depan yang lebih cerah</p>
+              </div>
+
+              <div className="bg-green-50 rounded-xl p-6">
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Users className="w-6 h-6 text-green-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-2">Collaboration</h3>
+                <p className="text-gray-600">Berkolaborasi dalam membangun generasi muda yang kompeten di bidang IT</p>
+              </div>
+
+              <div className="bg-purple-50 rounded-xl p-6">
+                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Rocket className="w-6 h-6 text-purple-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-2">Growth</h3>
+                <p className="text-gray-600">Berkembang bersama melalui pembelajaran dan praktik langsung</p>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Announcements Section */}
+      {announcements.length > 0 && (
+        <section className="py-20 bg-blue-50">
+          <div className="container mx-auto px-6">
+            <motion.div 
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              viewport={{ once: true }}
+              className="text-center mb-16"
+            >
+              <h2 className="text-4xl font-bold text-gray-800 mb-4">Pengumuman Terbaru</h2>
+              <p className="text-xl text-gray-600">Update dan informasi penting dari GEMA</p>
+            </motion.div>
+
+            <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+              {announcements.map((announcement, index) => (
+                <motion.div
+                  key={announcement.id}
+                  initial={{ opacity: 0, y: 50 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                  viewport={{ once: true }}
+                  className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-300"
+                >
+                  <div className="flex items-start mb-4">
+                    <span className="text-2xl mr-3">{getAnnouncementIcon(announcement.type)}</span>
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-800 mb-2">{announcement.title}</h3>
+                      <p className="text-sm text-gray-500">{formatDate(announcement.publishedAt)}</p>
+                    </div>
+                  </div>
+                  <p className="text-gray-600">{announcement.content}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Vision & Mission */}
       <section id="tentang" className="py-20 bg-gray-50">
         <div className="container mx-auto px-6">
           <motion.div 
@@ -144,7 +397,63 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Vision & Mission */}
+      {/* Upcoming Activities */}
+      {activities.length > 0 && (
+        <section className="py-20 bg-white">
+          <div className="container mx-auto px-6">
+            <motion.div 
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              viewport={{ once: true }}
+              className="text-center mb-16"
+            >
+              <h2 className="text-4xl font-bold text-gray-800 mb-4">Kegiatan Mendatang</h2>
+              <p className="text-xl text-gray-600">Jangan lewatkan event menarik dari GEMA</p>
+            </motion.div>
+
+            <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+              {activities.map((activity, index) => (
+                <motion.div
+                  key={activity.id}
+                  initial={{ opacity: 0, y: 50 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                  viewport={{ once: true }}
+                  className="bg-gray-50 rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300"
+                >
+                  <div className="h-48 bg-gradient-to-br from-blue-500 to-green-500 flex items-center justify-center">
+                    <Calendar className="w-16 h-16 text-white" />
+                  </div>
+                  <div className="p-6">
+                    <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-sm font-medium rounded-full mb-3">
+                      {activity.category}
+                    </span>
+                    <h3 className="text-xl font-bold text-gray-800 mb-3">{activity.title}</h3>
+                    <p className="text-gray-600 mb-4">{activity.description}</p>
+                    <div className="space-y-2 text-sm text-gray-500">
+                      <div className="flex items-center">
+                        <Calendar className="w-4 h-4 mr-2" />
+                        {formatDate(activity.date)} • {activity.time}
+                      </div>
+                      <div className="flex items-center">
+                        <MapPinIcon className="w-4 h-4 mr-2" />
+                        {activity.location}
+                      </div>
+                      <div className="flex items-center">
+                        <Users className="w-4 h-4 mr-2" />
+                        {activity.participants}/{activity.capacity} peserta
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Activities */}
       <section className="py-20 bg-white">
         <div className="container mx-auto px-6">
           <div className="grid md:grid-cols-2 gap-12 max-w-6xl mx-auto">
@@ -208,7 +517,7 @@ export default function Home() {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-4xl font-bold text-gray-800 mb-4">Kegiatan Utama</h2>
+            <h2 className="text-4xl font-bold text-gray-800 mb-4">Program Utama</h2>
             <p className="text-xl text-gray-600">Program unggulan yang kami tawarkan</p>
           </motion.div>
 
@@ -258,8 +567,53 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Gallery Preview */}
+      {gallery.length > 0 && (
+        <section className="py-20 bg-white">
+          <div className="container mx-auto px-6">
+            <motion.div 
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              viewport={{ once: true }}
+              className="text-center mb-16"
+            >
+              <h2 className="text-4xl font-bold text-gray-800 mb-4">Galeri Kegiatan</h2>
+              <p className="text-xl text-gray-600">Momen-momen berharga kegiatan GEMA</p>
+            </motion.div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+              {gallery.map((item, index) => (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                  viewport={{ once: true }}
+                  className="bg-gray-50 rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 group"
+                >
+                  <div className="h-48 bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/80 to-green-500/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                      <Trophy className="w-8 h-8 text-white" />
+                    </div>
+                  </div>
+                  <div className="p-4">
+                    <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full mb-2">
+                      {item.category}
+                    </span>
+                    <h3 className="text-sm font-bold text-gray-800 mb-1">{item.title}</h3>
+                    <p className="text-xs text-gray-600">{item.description}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Benefits */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-gray-50">
         <div className="container mx-auto px-6">
           <motion.div 
             initial={{ opacity: 0, y: 50 }}
@@ -339,6 +693,11 @@ export default function Home() {
               <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-green-500 rounded-full mx-auto mb-6 flex items-center justify-center">
                 <Users className="w-10 h-10 text-white" />
               </div>
+              <div className="flex justify-center mb-4">
+                {[1,2,3,4,5].map((star) => (
+                  <Star key={star} className="w-6 h-6 text-yellow-400 fill-current" />
+                ))}
+              </div>
               <blockquote className="text-xl text-gray-600 italic mb-6">
                 &ldquo;Ikut GEMA bikin aku jago coding dan ketemu banyak teman baru! 
                 Mentornya asik dan materinya mudah dipahami. Sekarang aku udah bisa 
@@ -367,17 +726,30 @@ export default function Home() {
             <p className="text-xl text-gray-300 mb-8">
               dan mulai petualanganmu di dunia teknologi!
             </p>
-            <a
-              href="https://spmbkedunglo.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-green-400 hover:bg-green-500 text-black font-bold py-4 px-8 rounded-full text-xl transition-all duration-300 transform hover:scale-105 inline-block"
-            >
-              Daftar Sekarang
-            </a>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <a
+                href="https://spmbkedunglo.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-green-400 hover:bg-green-500 text-black font-bold py-4 px-8 rounded-full text-xl transition-all duration-300 transform hover:scale-105 inline-flex items-center justify-center gap-2"
+              >
+                <ExternalLink className="w-6 h-6" />
+                Daftar Sekarang
+              </a>
+              <a
+                href="#daftar"
+                className="border-2 border-white text-white hover:bg-white hover:text-gray-900 font-bold py-4 px-8 rounded-full text-xl transition-all duration-300 inline-flex items-center justify-center gap-2"
+              >
+                <ChevronRight className="w-6 h-6" />
+                Pelajari Lebih Lanjut
+              </a>
+            </div>
           </motion.div>
         </div>
       </section>
+
+      {/* Registration Form */}
+      <RegistrationForm />
 
       {/* Footer */}
       <footer className="bg-black text-white py-16">
@@ -386,8 +758,14 @@ export default function Home() {
             {/* Logo & Description */}
             <div className="text-center md:text-left">
               <div className="flex items-center justify-center md:justify-start mb-4">
-                <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mr-3">
-                  <Code className="w-6 h-6 text-white" />
+                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mr-3 p-1 shadow-md">
+                  <Image
+                    src="/gema.svg"
+                    alt="GEMA - Generasi Muda Informatika Logo"
+                    width={40}
+                    height={40}
+                    className="w-10 h-10"
+                  />
                 </div>
                 <h3 className="text-2xl font-bold">GEMA</h3>
               </div>
@@ -451,11 +829,22 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 GEMA - Generasi Muda Informatika | SMA Wahidiyah Kediri. All rights reserved.</p>
+          <div className="border-t border-gray-800 mt-12 pt-8">
+            <div className="flex flex-col md:flex-row justify-between items-center text-gray-400">
+              <p>&copy; 2024 GEMA - Generasi Muda Informatika | SMA Wahidiyah Kediri. All rights reserved.</p>
+              <a 
+                href="/admin/login"
+                className="mt-4 md:mt-0 text-gray-500 hover:text-white transition-colors text-sm"
+              >
+                Admin Panel
+              </a>
+            </div>
           </div>
         </div>
       </footer>
+
+      {/* Floating Chat Component */}
+      <FloatingChat />
     </main>
   );
 }
