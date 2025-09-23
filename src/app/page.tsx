@@ -703,8 +703,8 @@ export default function Home() {
                 Mentornya asik dan materinya mudah dipahami. Sekarang aku udah bisa 
                 bikin aplikasi sendiri!&rdquo;
               </blockquote>
-              <div className="font-bold text-gray-800">Ahmad Rizki</div>
-              <div className="text-gray-500">Alumni GEMA 2023</div>
+              <div className="font-bold text-gray-800">Noor Wahid</div>
+              <div className="text-gray-500">Alumni SMA Wahidiyah 2020</div>
             </div>
           </motion.div>
         </div>
