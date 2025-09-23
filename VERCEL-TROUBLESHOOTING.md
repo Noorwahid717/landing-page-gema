@@ -27,7 +27,7 @@ DATABASE_URL=file:./prod.db
 
 # Admin Credentials  
 ADMIN_EMAIL=admin@smawahidiyah.edu
-ADMIN_PASSWORD=GemaWahidiyah2025!
+ADMIN_PASSWORD=admin123
 
 # Site Configuration
 NEXT_PUBLIC_SITE_URL=https://landing-page-gema.vercel.app
@@ -69,7 +69,12 @@ vercel --prod
    ```  
    https://landing-page-gema.vercel.app/admin/login
    Email: admin@smawahidiyah.edu
-   Password: GemaWahidiyah2025!
+   Password: admin123
+   ```
+
+3. **Seed Database (First Time Setup):**
+   ```
+   POST: https://landing-page-gema.vercel.app/api/seed?secret=YOUR_NEXTAUTH_SECRET
    ```
 
 3. **Test Debug Session:**
