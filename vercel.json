@@ -1,8 +1,11 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "prisma generate && npm run build",
   "outputDirectory": ".next",
   "framework": "nextjs",
   "regions": ["sin1"],
+  "env": {
+    "SKIP_ENV_VALIDATION": "true"
+  },
   "functions": {
     "src/app/api/**/*.ts": {
       "maxDuration": 10

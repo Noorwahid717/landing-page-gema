@@ -12,7 +12,9 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:seed": "prisma db seed",
-    "db:migrate": "bash migrate-to-postgres.sh"
+    "db:migrate": "bash migrate-to-postgres.sh",
+    "vercel:force-deploy": "vercel --prod --force",
+    "vercel:build": "prisma generate && next build"
   },
   "prisma": {
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
