@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react'
 
 export interface Toast {

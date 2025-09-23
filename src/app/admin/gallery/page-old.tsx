@@ -95,7 +95,7 @@ export default function GalleryPage() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              {categoryLabels[category]}
+              {categoryLabels[category as keyof typeof categoryLabels]}
             </button>
           ))}
         </div>
@@ -192,7 +192,7 @@ export default function GalleryPage() {
                   )}
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">
-                      {categoryLabels[item.category] || item.category}
+                      {categoryLabels[item.category as keyof typeof categoryLabels] || item.category}
                     </span>
                     <span className="text-xs text-gray-500">
                       {new Date(item.createdAt).toLocaleDateString('id-ID')}

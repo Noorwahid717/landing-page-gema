@@ -73,19 +73,20 @@ export default function UsersPage() {
     try {
       const url = '/api/admin/users'
       const method = editingUser ? 'PATCH' : 'POST'
-      const body = editingUser 
+      let bodyData = editingUser 
         ? { id: editingUser.id, ...formData }
         : formData
 
       // Don't send empty password for updates
-      if (editingUser && !body.password) {
-        delete body.password
+      if (editingUser && !bodyData.password) {
+        const { password, ...rest } = bodyData
+        bodyData = rest as typeof bodyData
       }
 
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
+        body: JSON.stringify(bodyData)
       })
 
       if (response.ok) {

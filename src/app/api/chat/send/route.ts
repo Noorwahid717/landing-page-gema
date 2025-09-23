@@ -14,7 +14,7 @@ async function broadcastToAdmins(messageData: {
 }) {
   try {
     // Import dynamically to avoid circular dependencies
-    const { broadcastToClients } = await import('@/app/api/notifications/sse/route')
+    const { broadcastToClients } = await import('@/lib/notification-broadcast')
     
     broadcastToClients({
       type: 'new_chat_message',

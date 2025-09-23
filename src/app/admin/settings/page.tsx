@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react'
-import { Settings, Save, RefreshCw } from 'lucide-react'
+import { Save, RefreshCw } from 'lucide-react'
 import AdminLayout from '@/components/admin/AdminLayout'
 
 interface Setting {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react'
-import { Settings, Save, Eye, EyeOff, Globe, Mail, Palette, Shield, Database } from 'lucide-react'
+import { Settings, Save, Eye, EyeOff, Globe, Mail, Shield, Database } from 'lucide-react'
 import AdminLayout from '@/components/admin/AdminLayout'
 
 interface SiteSettings {

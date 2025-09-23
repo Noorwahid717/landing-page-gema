@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect } from 'react'
-import { Bell, X, Eye, MessageSquare, Clock, User, MessageCircle } from 'lucide-react'
-import { useSSENotifications, NotificationData } from '@/hooks/useSSENotifications'
+import { Bell, X, MessageSquare, Clock, User, MessageCircle } from 'lucide-react'
+import { useSSENotifications } from '@/hooks/useSSENotifications'
 import { useToast } from '@/components/ui/Toast'
 
 export default function NotificationPanel() {
@@ -168,15 +168,15 @@ export default function NotificationPanel() {
                         
                         {notification.data && (
                           <div className="text-sm text-gray-600 space-y-1">
-                            {notification.data.name && (
+                            {notification.data?.name && (
                               <div className="flex items-center gap-2">
                                 <User className="w-3 h-3" />
-                                <span>{notification.data.name}</span>
+                                <span>{String(notification.data.name)}</span>
                               </div>
                             )}
-                            {notification.data.preview && (
+                            {notification.data?.preview && (
                               <p className="text-xs text-gray-500 line-clamp-2">
-                                {notification.data.preview}
+                                {String(notification.data.preview)}
                               </p>
                             )}
                           </div>

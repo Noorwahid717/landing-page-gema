@@ -1,13 +1,11 @@
 import { NextRequest } from 'next/server'
-
-// Store active chat connections
-const chatClients = new Set<ReadableStreamDefaultController>()
+import { addChatClient, removeChatClient } from '@/lib/chat-broadcast'
 
 export async function GET(request: NextRequest) {
   const stream = new ReadableStream({
     start(controller) {
       // Add this client to chat connections
-      chatClients.add(controller)
+      addChatClient(controller)
       
       // Send initial connection message
       const data = JSON.stringify({
@@ -27,14 +25,14 @@ export async function GET(request: NextRequest) {
           })}\n\n`)
         } catch (error) {
           clearInterval(heartbeat)
-          chatClients.delete(controller)
+          removeChatClient(controller)
         }
       }, 30000)
       
       // Clean up when client disconnects
       request.signal.addEventListener('abort', () => {
         clearInterval(heartbeat)
-        chatClients.delete(controller)
+        removeChatClient(controller)
         try {
           controller.close()
         } catch (error) {
@@ -44,7 +42,7 @@ export async function GET(request: NextRequest) {
     },
     
     cancel(controller: ReadableStreamDefaultController) {
-      chatClients.delete(controller)
+      removeChatClient(controller)
     }
   })
 
@@ -58,27 +56,3 @@ export async function GET(request: NextRequest) {
     }
   })
 }
-
-// Function to broadcast chat messages to all connected clients
-export function broadcastChatMessage(data: {
-  type: string;
-  message: string;
-  senderName: string;
-  sessionId?: string;
-  timestamp: Date;
-}) {
-  const message = `data: ${JSON.stringify(data)}\n\n`
-  
-  const clientsCopy = Array.from(chatClients)
-  
-  clientsCopy.forEach(controller => {
-    try {
-      controller.enqueue(message)
-    } catch (error) {
-      chatClients.delete(controller)
-    }
-  })
-}
-
-// Export clients for external use
-export { chatClients }
