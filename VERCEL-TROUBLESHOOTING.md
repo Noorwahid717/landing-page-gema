@@ -1,11 +1,46 @@
 # Vercel Deployment Troubleshooting - GEMA Landing Page
 
-## ❌ Common Issue: "Server error - Configuration" 
+## ❌ Common Issues
 
-### Problem
+### Issue 1: "Server error - Configuration" 
 NextAuth configuration error karena environment variables tidak di-set di Vercel production.
 
-### ✅ Solution
+### Issue 2: "Email atau password salah"
+Admin user belum dibuat di database karena database connection error.
+
+### Issue 3: "Unable to open database file"
+SQLite file-based database tidak compatible dengan Vercel production (read-only filesystem).
+
+## 🚨 **CRITICAL: Database Issue**
+
+**SQLite tidak bisa digunakan di Vercel production!** 
+
+Error: `"Unable to open the database file"` terjadi karena:
+- Vercel filesystem adalah read-only
+- SQLite `file:./prod.db` tidak bisa write/create file
+- Perlu database cloud untuk production
+
+### ✅ **Database Solutions:**
+
+### ✅ **Database Solutions:**
+
+#### Option 1: Vercel Postgres (Recommended)
+1. Vercel Dashboard → Storage → Create Postgres Database
+2. Copy `POSTGRES_URL` to Environment Variables
+3. Update `DATABASE_URL=postgresql://...` 
+4. Redeploy → Auto-migration + seeding
+
+#### Option 2: Supabase (Free)
+1. https://supabase.com → New Project
+2. Copy Database URL
+3. Set `DATABASE_URL=postgresql://...`
+
+#### Option 3: PlanetScale (MySQL)
+1. https://planetscale.com → New Database  
+2. Copy connection string
+3. Set `DATABASE_URL=mysql://...`
+
+## ✅ Solution Steps
 
 #### Option 1: Via Vercel Dashboard (Recommended)
 
