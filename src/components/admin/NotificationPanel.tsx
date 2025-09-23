@@ -168,17 +168,24 @@ export default function NotificationPanel() {
                         
                         {notification.data && (
                           <div className="text-sm text-gray-600 space-y-1">
-                            {notification.data?.name && (
-                              <div className="flex items-center gap-2">
-                                <User className="w-3 h-3" />
-                                <span>{String(notification.data.name)}</span>
-                              </div>
-                            )}
-                            {notification.data?.preview && (
-                              <p className="text-xs text-gray-500 line-clamp-2">
-                                {String(notification.data.preview)}
-                              </p>
-                            )}
+                            {(() => {
+                              const data = notification.data as Record<string, unknown>
+                              return (
+                                <>
+                                  {data?.name && (
+                                    <div className="flex items-center gap-2">
+                                      <User className="w-3 h-3" />
+                                      <span>{String(data.name)}</span>
+                                    </div>
+                                  )}
+                                  {data?.preview && (
+                                    <p className="text-xs text-gray-500 line-clamp-2">
+                                      {String(data.preview)}
+                                    </p>
+                                  )}
+                                </>
+                              )
+                            })()}
                           </div>
                         )}
                         

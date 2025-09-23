@@ -255,6 +255,7 @@ export default function SettingsPage() {
                         checked={formData.registrationOpen}
                         onChange={handleInputChange}
                         className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        title="Toggle pendaftaran terbuka/tertutup"
                       />
                       <label className="ml-2 block text-sm text-gray-900">
                         Buka Pendaftaran
@@ -268,6 +269,7 @@ export default function SettingsPage() {
                         checked={formData.maintenanceMode}
                         onChange={handleInputChange}
                         className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        title="Toggle mode maintenance"
                       />
                       <label className="ml-2 block text-sm text-gray-900">
                         Mode Maintenance

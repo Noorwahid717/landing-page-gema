@@ -210,12 +210,14 @@ export default function AnnouncementsPage() {
                         <button
                           onClick={() => handleEdit(announcement)}
                           className="p-2 text-blue-600 hover:bg-blue-100 rounded"
+                          title="Edit pengumuman"
                         >
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(announcement.id)}
                           className="p-2 text-red-600 hover:bg-red-100 rounded"
+                          title="Hapus pengumuman"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -272,6 +274,7 @@ export default function AnnouncementsPage() {
                         value={formData.type}
                         onChange={handleInputChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                        title="Pilih tipe pengumuman"
                       >
                         {types.map((type) => (
                           <option key={type.value} value={type.value}>
@@ -287,6 +290,7 @@ export default function AnnouncementsPage() {
                         value={formData.isActive.toString()}
                         onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.value === 'true' }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                        title="Pilih status pengumuman"
                       >
                         <option value="true">Aktif</option>
                         <option value="false">Nonaktif</option>
