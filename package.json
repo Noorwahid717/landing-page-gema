@@ -8,7 +8,14 @@
     "start": "next start",
     "lint": "eslint",
     "deploy": "vercel --prod",
-    "deploy-preview": "vercel"
+    "deploy-preview": "vercel",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:seed": "prisma db seed",
+    "db:migrate": "bash migrate-to-postgres.sh"
+  },
+  "prisma": {
+    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.7",
@@ -37,6 +44,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.5.2",
     "tailwindcss": "^4",
+    "ts-node": "^10.9.2",
     "typescript": "^5"
   }
 }

@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -15,9 +15,11 @@ model Admin {
   email     String   @unique
   password  String
   name      String
-  role      String   @default("admin")
+  role      String   @default("ADMIN")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@map("admins")
 }
 
 model Contact {
@@ -32,6 +34,8 @@ model Contact {
   repliedAt  DateTime?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
+
+  @@map("contacts")
 }
 
 model Registration {
@@ -46,6 +50,8 @@ model Registration {
   notes       String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@map("registrations")
 }
 
 model Announcement {
@@ -57,12 +63,16 @@ model Announcement {
   publishDate DateTime @default(now())
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@map("announcements")
 }
 
 model Settings {
   id    String @id @default(cuid())
   key   String @unique
   value String
+
+  @@map("settings")
 }
 
 model Activity {
@@ -76,6 +86,8 @@ model Activity {
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@map("activities")
 }
 
 model Gallery {
@@ -87,6 +99,8 @@ model Gallery {
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@map("galleries")
 }
 
 model ChatMessage {
@@ -103,6 +117,7 @@ model ChatMessage {
   
   @@index([sessionId])
   @@index([createdAt])
+  @@map("chat_messages")
 }
 
 model ChatSession {
@@ -121,4 +136,5 @@ model ChatSession {
   @@index([status])
   @@index([assignedTo])
   @@index([lastMessage])
+  @@map("chat_sessions")
 }
