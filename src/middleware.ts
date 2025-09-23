@@ -7,8 +7,13 @@ export default withAuth(
     if (req.nextUrl.pathname.startsWith('/admin') && 
         req.nextUrl.pathname !== '/admin/login') {
       
+      console.log('Middleware - Token:', req.nextauth.token)
+      console.log('Middleware - Role:', req.nextauth.token?.role)
+      
       // Check if user has admin role
-      if (req.nextauth.token?.role !== 'SUPER_ADMIN' && req.nextauth.token?.role !== 'ADMIN') {
+      if (req.nextauth.token?.role !== 'SUPER_ADMIN' && 
+          req.nextauth.token?.role !== 'ADMIN') {
+        console.log('Middleware - Unauthorized, redirecting to login')
         return NextResponse.redirect(new URL('/admin/login', req.url))
       }
     }
@@ -23,6 +28,8 @@ export default withAuth(
         
         // For other admin routes, require token
         if (req.nextUrl.pathname.startsWith('/admin')) {
+          console.log('Middleware authorized - Token exists:', !!token)
+          console.log('Middleware authorized - Token role:', token?.role)
           return !!token
         }
         

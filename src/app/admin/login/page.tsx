@@ -32,15 +32,28 @@ export default function AdminLogin() {
       if (result?.error) {
         setError('Email atau password salah')
       } else if (result?.ok) {
-        // Login successful, redirect to dashboard
-        console.log('Login successful, redirecting...')
-        router.push('/admin/dashboard')
+        // Login successful, verify session and redirect
+        console.log('Login successful, verifying session...')
+        
+        // Wait a bit for session to be established
+        setTimeout(async () => {
+          const session = await getSession()
+          console.log('Session after login:', session)
+          
+          if (session) {
+            // Use window.location for reliable redirect
+            window.location.href = '/admin/dashboard'
+          } else {
+            setError('Session tidak terbentuk. Silakan coba lagi.')
+            setIsLoading(false)
+          }
+        }, 500)
       } else {
         setError('Login gagal. Silakan coba lagi.')
       }
     } catch (err) {
+      console.error('Login error:', err)
       setError('Terjadi kesalahan. Silakan coba lagi.')
-    } finally {
       setIsLoading(false)
     }
   }
