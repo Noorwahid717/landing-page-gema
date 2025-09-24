@@ -40,16 +40,51 @@ export default function AdminLogin() {
         type: 'info'
       })
       
-      // Use NextAuth signIn with proper redirect handling
+      // Use NextAuth signIn with redirect: false first to handle errors
       const result = await signIn('credentials', {
         email,
         password,
-        redirect: true, // Let NextAuth handle redirect
-        callbackUrl: '/admin/dashboard'
+        redirect: false
       })
 
-      // This code won't execute if redirect: true works properly
-      console.log('Login result (should not see this):', result)
+      console.log('Login result:', result)
+      
+      if (result?.error) {
+        console.error('Login failed:', result.error)
+        setError('Email atau password salah. Silakan periksa kredensial Anda.')
+        setToast({
+          show: true,
+          message: 'Login gagal! Periksa email dan password Anda.',
+          type: 'error'
+        })
+        setIsLoading(false)
+        setLoadingMessage('')
+      } else if (result?.ok) {
+        console.log('Login successful, redirecting to dashboard...')
+        setSuccess(true)
+        setLoadingMessage('Login berhasil! Mengalihkan ke dashboard...')
+        setToast({
+          show: true,
+          message: '🎉 Login berhasil! Selamat datang Admin!',
+          type: 'success'
+        })
+        
+        // Manual redirect to dashboard
+        setTimeout(() => {
+          console.log('Redirecting to dashboard...')
+          window.location.href = '/admin/dashboard'
+        }, 1500)
+      } else {
+        console.error('Unexpected login result:', result)
+        setError('Login gagal. Silakan coba lagi.')
+        setToast({
+          show: true,
+          message: 'Terjadi masalah saat login. Silakan coba lagi.',
+          type: 'warning'
+        })
+        setIsLoading(false)
+        setLoadingMessage('')
+      }
       
     } catch (error) {
       console.error('Login error:', error)
