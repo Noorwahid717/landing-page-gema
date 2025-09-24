@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react'
+import Toast from '@/components/Toast'
 
 export default function AdminLogin() {
   const [email, setEmail] = useState('')
@@ -13,12 +14,21 @@ export default function AdminLogin() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState(false)
+  const [loadingMessage, setLoadingMessage] = useState('')
+  const [toast, setToast] = useState<{
+    show: boolean;
+    message: string;
+    type: 'success' | 'error' | 'warning' | 'info';
+  }>({ show: false, message: '', type: 'info' })
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError('')
+    setSuccess(false)
+    setLoadingMessage('Memverifikasi kredensial...')
 
     try {
       const result = await signIn('credentials', {
@@ -30,36 +40,71 @@ export default function AdminLogin() {
       console.log('Login result:', result)
 
       if (result?.error) {
-        setError('Email atau password salah')
+        setError('Email atau password salah. Pastikan kredensial admin benar.')
+        setToast({
+          show: true,
+          message: 'Login gagal! Periksa email dan password Anda.',
+          type: 'error'
+        })
+        setIsLoading(false)
+        setLoadingMessage('')
       } else if (result?.ok) {
-        // Login successful, verify session and redirect
-        console.log('Login successful, verifying session...')
+        // Login successful - show success and redirect
+        console.log('Login successful, redirecting...')
+        setSuccess(true)
+        setLoadingMessage('Login berhasil! Mengalihkan ke dashboard...')
+        setToast({
+          show: true,
+          message: '🎉 Login berhasil! Selamat datang Admin!',
+          type: 'success'
+        })
         
-        // Wait a bit for session to be established
-        setTimeout(async () => {
-          const session = await getSession()
-          console.log('Session after login:', session)
+        // Wait a moment then redirect with multiple fallbacks
+        setTimeout(() => {
+          setLoadingMessage('Memuat dashboard admin...')
           
-          if (session) {
-            // Use window.location for reliable redirect
+          // Try Next.js router first
+          router.push('/admin/dashboard')
+          
+          // Fallback: force redirect after delay
+          setTimeout(() => {
             window.location.href = '/admin/dashboard'
-          } else {
-            setError('Session tidak terbentuk. Silakan coba lagi.')
-            setIsLoading(false)
-          }
-        }, 500)
+          }, 2000)
+        }, 1500)
       } else {
-        setError('Login gagal. Silakan coba lagi.')
+        setError('Login gagal. Silakan periksa koneksi dan coba lagi.')
+        setToast({
+          show: true,
+          message: 'Koneksi bermasalah. Silakan coba lagi.',
+          type: 'warning'
+        })
+        setIsLoading(false)
+        setLoadingMessage('')
       }
     } catch (err) {
       console.error('Login error:', err)
-      setError('Terjadi kesalahan. Silakan coba lagi.')
+      setError('Terjadi kesalahan sistem. Silakan coba lagi atau hubungi administrator.')
+      setToast({
+        show: true,
+        message: 'Terjadi kesalahan sistem. Hubungi administrator jika masalah berlanjut.',
+        type: 'error'
+      })
       setIsLoading(false)
+      setLoadingMessage('')
     }
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-500 via-blue-600 to-green-400 flex items-center justify-center p-4">
+      {/* Toast Notifications */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.show}
+        onClose={() => setToast({ ...toast, show: false })}
+        duration={4000}
+      />
+
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute top-20 left-20 w-64 h-64 bg-white rounded-full blur-3xl"></div>
@@ -90,6 +135,19 @@ export default function AdminLogin() {
           {error && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
               {error}
+            </div>
+          )}
+
+          {success && (
+            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+              ✅ Login berhasil! Mengalihkan ke dashboard...
+            </div>
+          )}
+
+          {isLoading && loadingMessage && (
+            <div className="bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded mb-4 flex items-center">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-3"></div>
+              {loadingMessage}
             </div>
           )}
 
@@ -151,9 +209,12 @@ export default function AdminLogin() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-blue-600 to-green-500 text-white py-3 px-4 rounded-lg font-medium hover:from-blue-700 hover:to-green-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+              className="w-full bg-gradient-to-r from-blue-600 to-green-500 text-white py-3 px-4 rounded-lg font-medium hover:from-blue-700 hover:to-green-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
             >
-              {isLoading ? 'Memproses...' : 'Masuk'}
+              {isLoading && (
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+              )}
+              {success ? 'Berhasil! Mengalihkan...' : isLoading ? 'Memproses...' : '🔐 Masuk Admin'}
             </button>
           </form>
 
