@@ -80,17 +80,6 @@ function StudentDashboardContent() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('assignments')
 
-  useEffect(() => {
-    if (status === 'loading') return
-
-    if (!session || session.user.userType !== 'student') {
-      router.push('/student/login')
-      return
-    }
-
-    fetchAssignments()
-  }, [session, status, router, fetchAssignments])
-
   const fetchAssignments = useCallback(async () => {
     try {
       setLoading(true)
@@ -102,7 +91,6 @@ function StudentDashboardContent() {
         result?.success && Array.isArray(result.data) ? result.data : []
 
       let studentSubmissions: Submission[] = []
-
       if (session?.user?.id) {
         try {
           const submissionsResponse = await fetch(
@@ -163,6 +151,17 @@ function StudentDashboardContent() {
       setLoading(false)
     }
   }, [session?.user?.id])
+
+  useEffect(() => {
+    if (status === 'loading') return
+
+    if (!session || session.user.userType !== 'student') {
+      router.push('/student/login')
+      return
+    }
+
+    fetchAssignments()
+  }, [session, status, router, fetchAssignments])
 
   const getAssignmentStatus = (assignment: Assignment) => {
     const dueDate = new Date(assignment.dueDate)
