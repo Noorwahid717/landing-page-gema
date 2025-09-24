@@ -38,12 +38,13 @@ export async function POST(request: NextRequest) {
         role: admin.role
       } : null
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('Login test error:', error);
     return NextResponse.json({
       success: false,
       message: 'Internal error',
-      error: error.message
+      error: errorMessage
     }, { status: 500 });
   }
 }

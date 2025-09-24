@@ -11,7 +11,8 @@ import {
   BarChart3,
   Bell,
   TrendingUp,
-  Eye
+  Eye,
+  BookOpen
 } from 'lucide-react'
 import AdminLayout from '@/components/admin/AdminLayout'
 
@@ -163,7 +164,7 @@ export default function AdminDashboard() {
           {/* Quick Actions */}
           <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Aksi Cepat</h2>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
               <a
                 href="/admin/registrations"
                 className="flex flex-col items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
@@ -177,6 +178,13 @@ export default function AdminDashboard() {
               >
                 <MessageSquare className="w-8 h-8 text-green-600 mb-2" />
                 <span className="text-sm font-medium text-green-900">Lihat Pesan</span>
+              </a>
+              <a
+                href="/admin/classroom"
+                className="flex flex-col items-center p-4 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors"
+              >
+                <BookOpen className="w-8 h-8 text-indigo-600 mb-2" />
+                <span className="text-sm font-medium text-indigo-900">Classroom</span>
               </a>
               <a
                 href="/admin/activities"

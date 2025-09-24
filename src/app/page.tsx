@@ -79,13 +79,22 @@ export default function Home() {
 
   const fetchPublicData = async () => {
     try {
-      const response = await fetch('/api/public');
+      // Add cache buster to ensure fresh data
+      const timestamp = new Date().getTime();
+      const response = await fetch(`/api/public?_t=${timestamp}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      });
       if (response.ok) {
         const data = await response.json();
+        console.log('Fetched public data:', data); // Debug log
         if (data.success) {
           setActivities(data.data.activities || []);
           setAnnouncements(data.data.announcements || []);
           setGallery(data.data.gallery || []);
+          console.log('Gallery data set:', data.data.gallery); // Debug log
           setStats(data.data.stats || {});
         }
       }
@@ -205,6 +214,13 @@ export default function Home() {
               >
                 <ExternalLink className="w-5 h-5" />
                 Daftar Sekarang
+              </a>
+              <a
+                href="/classroom"
+                className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-8 rounded-full text-lg transition-all duration-300 transform hover:scale-105 inline-flex items-center justify-center gap-2"
+              >
+                <BookOpen className="w-5 h-5" />
+                Classroom
               </a>
               <a
                 href="#daftar"
@@ -592,11 +608,38 @@ export default function Home() {
                   viewport={{ once: true }}
                   className="bg-gray-50 rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 group"
                 >
-                  <div className="h-48 bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center relative overflow-hidden">
+                  <div className="h-48 relative overflow-hidden">
+                    {item.image ? (
+                      <>
+                        <img 
+                          src={item.image} 
+                          alt={item.title}
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                          onError={(e) => {
+                            // Fallback jika gambar tidak bisa dimuat
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            const fallback = target.parentElement!.querySelector('.fallback-content') as HTMLElement;
+                            if (fallback) {
+                              fallback.classList.remove('hidden');
+                              fallback.classList.add('flex');
+                            }
+                          }}
+                        />
+                        <div className="fallback-content absolute inset-0 bg-gradient-to-br from-gray-300 to-gray-400 hidden items-center justify-center">
+                          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                            <Trophy className="w-8 h-8 text-white" />
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center">
+                        <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                          <Trophy className="w-8 h-8 text-white" />
+                        </div>
+                      </div>
+                    )}
                     <div className="absolute inset-0 bg-gradient-to-br from-blue-500/80 to-green-500/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                      <Trophy className="w-8 h-8 text-white" />
-                    </div>
                   </div>
                   <div className="p-4">
                     <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full mb-2">

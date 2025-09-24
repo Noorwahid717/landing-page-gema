@@ -3,5 +3,9 @@
     "src/app/api/**/*.ts": {
       "maxDuration": 10
     }
+  },
+  "public": true,
+  "github": {
+    "silent": true
   }
 }

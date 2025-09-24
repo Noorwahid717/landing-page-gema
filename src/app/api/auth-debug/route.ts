@@ -28,11 +28,12 @@ export async function GET(request: NextRequest) {
       nextAuthUrl: process.env.NEXTAUTH_URL,
       nextAuthSecret: process.env.NEXTAUTH_SECRET ? 'SET' : 'NOT_SET'
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('Auth debug error:', error);
     
     return NextResponse.json({
-      error: error.message,
+      error: errorMessage,
       session: null,
       hasSession: false,
       timestamp: new Date().toISOString()
