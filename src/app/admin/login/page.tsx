@@ -38,8 +38,8 @@ export default function AdminLogin() {
         type: 'info'
       })
       
-      // Use NextAuth signIn with redirect: false first to handle errors
-      const result = await signIn('credentials', {
+      // Use the admin credentials provider configured in NextAuth
+      const result = await signIn('admin', {
         email,
         password,
         redirect: false

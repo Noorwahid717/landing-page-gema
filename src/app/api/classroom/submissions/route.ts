@@ -238,10 +238,19 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const assignmentId = searchParams.get('assignmentId');
+    const studentId = searchParams.get('studentId');
 
-    let whereCondition = {};
+    const whereCondition: {
+      assignmentId?: string;
+      studentId?: string;
+    } = {};
+
     if (assignmentId) {
-      whereCondition = { assignmentId };
+      whereCondition.assignmentId = assignmentId;
+    }
+
+    if (studentId) {
+      whereCondition.studentId = studentId;
     }
 
     const submissions = await prisma.submission.findMany({
