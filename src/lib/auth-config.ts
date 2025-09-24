@@ -4,6 +4,43 @@ import { PrismaAdapter } from '@next-auth/prisma-adapter'
 import { prisma } from '@/lib/prisma'
 import { verifyPassword } from '@/lib/auth'
 
+const isProduction = process.env.NODE_ENV === 'production'
+
+const resolveCookieDomain = () => {
+  if (!isProduction) {
+    return undefined
+  }
+
+  const domainFromEnv = process.env.NEXTAUTH_COOKIE_DOMAIN
+  if (domainFromEnv) {
+    return domainFromEnv
+  }
+
+  const urlFromEnv = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_SITE_URL
+
+  if (!urlFromEnv) {
+    return undefined
+  }
+
+  try {
+    const hostname = new URL(urlFromEnv).hostname
+
+    // Avoid setting cookie domain for localhost or invalid hostnames
+    if (
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname.endsWith('.localhost')
+    ) {
+      return undefined
+    }
+
+    return hostname
+  } catch (error) {
+    console.error('Failed to resolve cookie domain from URL:', urlFromEnv, error)
+    return undefined
+  }
+}
+
 export const authOptions: AuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
@@ -57,8 +94,8 @@ export const authOptions: AuthOptions = {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        secure: process.env.NODE_ENV === 'production',
-        domain: process.env.NODE_ENV === 'production' ? '.vercel.app' : undefined
+        secure: isProduction,
+        domain: resolveCookieDomain()
       }
     }
   },

@@ -56,6 +56,7 @@ Error: `"Unable to open the database file"` terjadi karena:
 # CRITICAL - NextAuth Configuration
 NEXTAUTH_URL=https://landing-page-gema.vercel.app
 NEXTAUTH_SECRET=gema-sma-wahidiyah-super-secret-production-key-2025-kediri
+NEXTAUTH_COOKIE_DOMAIN=landing-page-gema.vercel.app
 
 # Database
 DATABASE_URL=file:./prod.db
