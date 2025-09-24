@@ -181,9 +181,7 @@ export async function POST(request: NextRequest) {
     const submission = await prisma.submission.create({
       data: {
         assignmentId,
-        studentName,
         studentId,
-        studentEmail: studentEmail || null,
         fileName: uniqueFileName,
         originalFileName: file.name,
         filePath: cloudinaryResult.secure_url,
@@ -199,6 +197,12 @@ export async function POST(request: NextRequest) {
             title: true,
             subject: true
           }
+        },
+        student: {
+          select: {
+            fullName: true,
+            email: true
+          }
         }
       }
     });
@@ -208,7 +212,7 @@ export async function POST(request: NextRequest) {
       message: 'File uploaded successfully',
       submission: {
         id: submission.id,
-        studentName: submission.studentName,
+        studentName: submission.student.fullName,
         studentId: submission.studentId,
         assignmentTitle: submission.assignment.title,
         fileName: submission.fileName,
@@ -248,6 +252,12 @@ export async function GET(request: NextRequest) {
             title: true,
             subject: true
           }
+        },
+        student: {
+          select: {
+            fullName: true,
+            email: true
+          }
         }
       },
       orderBy: {
@@ -257,9 +267,9 @@ export async function GET(request: NextRequest) {
 
     const transformedSubmissions = submissions.map(submission => ({
       id: submission.id,
-      studentName: submission.studentName,
+      studentName: submission.student.fullName,
       studentId: submission.studentId,
-      studentEmail: submission.studentEmail,
+      studentEmail: submission.student.email,
       assignmentId: submission.assignmentId,
       assignmentTitle: submission.assignment.title,
       assignmentSubject: submission.assignment.subject,

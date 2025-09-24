@@ -9,31 +9,57 @@ export default withAuth(
     console.log('Middleware - Path:', pathname)
     console.log('Middleware - Token exists:', !!token)
     console.log('Middleware - Token role:', token?.role)
+    console.log('Middleware - User type:', token?.userType)
     
     // Check if user is trying to access admin routes (except login)
     if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
       
       // If no token, redirect to login
       if (!token) {
-        console.log('Middleware - No token, redirecting to login')
+        console.log('Middleware - No token, redirecting to admin login')
         const loginUrl = new URL('/admin/login', req.url)
         loginUrl.searchParams.set('callbackUrl', req.url)
         return NextResponse.redirect(loginUrl)
       }
       
-      // Check if user has admin role
-      if (token.role !== 'SUPER_ADMIN' && token.role !== 'ADMIN') {
-        console.log('Middleware - Invalid role:', token.role, 'redirecting to login')
+      // Check if user has admin role and is admin type
+      if ((token.role !== 'SUPER_ADMIN' && token.role !== 'ADMIN') || token.userType !== 'admin') {
+        console.log('Middleware - Invalid admin access:', token.role, token.userType)
         return NextResponse.redirect(new URL('/admin/login', req.url))
       }
       
-      console.log('Middleware - Access granted for role:', token.role)
+      console.log('Middleware - Admin access granted for role:', token.role)
     }
     
-    // If user is logged in and tries to access login page, redirect to dashboard
-    if (pathname === '/admin/login' && token) {
-      console.log('Middleware - User already logged in, redirecting to dashboard')
+    // Check if user is trying to access student routes (except login/register)
+    if (pathname.startsWith('/student') && pathname !== '/student/login' && pathname !== '/student/register') {
+      
+      // If no token, redirect to student login
+      if (!token) {
+        console.log('Middleware - No token, redirecting to student login')
+        const loginUrl = new URL('/student/login', req.url)
+        loginUrl.searchParams.set('callbackUrl', req.url)
+        return NextResponse.redirect(loginUrl)
+      }
+      
+      // Check if user has student role and is student type
+      if (token.role !== 'STUDENT' || token.userType !== 'student') {
+        console.log('Middleware - Invalid student access:', token.role, token.userType)
+        return NextResponse.redirect(new URL('/student/login', req.url))
+      }
+      
+      console.log('Middleware - Student access granted')
+    }
+    
+    // Redirect logged-in users from login pages to their respective dashboards
+    if (pathname === '/admin/login' && token && token.userType === 'admin') {
+      console.log('Middleware - Admin already logged in, redirecting to admin dashboard')
       return NextResponse.redirect(new URL('/admin/dashboard', req.url))
+    }
+    
+    if (pathname === '/student/login' && token && token.userType === 'student') {
+      console.log('Middleware - Student already logged in, redirecting to student dashboard')
+      return NextResponse.redirect(new URL('/student/dashboard', req.url))
     }
   },
   {
@@ -44,21 +70,30 @@ export default withAuth(
         console.log('Middleware authorized callback - Path:', pathname)
         console.log('Middleware authorized callback - Token exists:', !!token)
         
-        // Always allow access to login page
-        if (pathname === '/admin/login') {
+        // Always allow access to login and register pages
+        if (pathname === '/admin/login' || pathname === '/student/login' || pathname === '/student/register') {
           return true
         }
         
-        // For admin routes, require valid token with proper role
+        // For admin routes, require valid admin token
         if (pathname.startsWith('/admin')) {
           const hasValidToken = !!token
           const hasValidRole = token?.role === 'SUPER_ADMIN' || token?.role === 'ADMIN'
-          console.log('Middleware authorized callback - Valid token:', hasValidToken)
-          console.log('Middleware authorized callback - Valid role:', hasValidRole)
-          return hasValidToken && hasValidRole
+          const hasValidType = token?.userType === 'admin'
+          console.log('Middleware authorized callback - Admin check:', hasValidToken, hasValidRole, hasValidType)
+          return hasValidToken && hasValidRole && hasValidType
         }
         
-        // Allow access to non-admin routes
+        // For student routes, require valid student token
+        if (pathname.startsWith('/student')) {
+          const hasValidToken = !!token
+          const hasValidRole = token?.role === 'STUDENT'
+          const hasValidType = token?.userType === 'student'
+          console.log('Middleware authorized callback - Student check:', hasValidToken, hasValidRole, hasValidType)
+          return hasValidToken && hasValidRole && hasValidType
+        }
+        
+        // Allow access to public routes
         return true
       },
     },
@@ -66,5 +101,5 @@ export default withAuth(
 )
 
 export const config = {
-  matcher: ['/admin/:path*']
+  matcher: ['/admin/:path*', '/student/:path*']
 }

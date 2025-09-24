@@ -44,8 +44,10 @@ const resolveCookieDomain = () => {
 export const authOptions: AuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
+    // Admin Login Provider
     CredentialsProvider({
-      name: 'credentials',
+      id: 'admin',
+      name: 'Admin Login',
       credentials: {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' }
@@ -78,7 +80,57 @@ export const authOptions: AuthOptions = {
           id: admin.id,
           email: admin.email,
           name: admin.name,
-          role: admin.role
+          role: admin.role,
+          userType: 'admin'
+        }
+      }
+    }),
+    // Student Login Provider
+    CredentialsProvider({
+      id: 'student',
+      name: 'Student Login',
+      credentials: {
+        studentId: { label: 'Student ID', type: 'text' },
+        password: { label: 'Password', type: 'password' }
+      },
+      async authorize(credentials) {
+        if (!credentials?.studentId || !credentials?.password) {
+          return null
+        }
+
+        const student = await prisma.student.findUnique({
+          where: {
+            studentId: credentials.studentId
+          }
+        })
+
+        if (!student || student.status !== 'active') {
+          return null
+        }
+
+        const isPasswordValid = await verifyPassword(
+          credentials.password,
+          student.password
+        )
+
+        if (!isPasswordValid) {
+          return null
+        }
+
+        // Update last login
+        await prisma.student.update({
+          where: { id: student.id },
+          data: { lastLoginAt: new Date() }
+        })
+
+        return {
+          id: student.id,
+          email: student.email,
+          name: student.fullName,
+          studentId: student.studentId,
+          class: student.class || undefined,
+          role: 'STUDENT',
+          userType: 'student'
         }
       }
     })
@@ -108,6 +160,9 @@ export const authOptions: AuthOptions = {
       if (user) {
         token.role = user.role
         token.id = user.id
+        token.userType = user.userType
+        token.studentId = user.studentId
+        token.class = user.class
       }
       return token
     },
@@ -115,17 +170,26 @@ export const authOptions: AuthOptions = {
       if (token) {
         session.user.id = token.sub!
         session.user.role = token.role as string
+        session.user.userType = token.userType as string
+        session.user.studentId = token.studentId as string
+        session.user.class = token.class as string
       }
       return session
     },
     async redirect({ url, baseUrl }) {
       console.log('NextAuth redirect - url:', url, 'baseUrl:', baseUrl)
       
-      // Always redirect to dashboard after successful login
+      // Redirect based on user type
       if (url.includes('/admin/login') || url === baseUrl) {
         const dashboardUrl = `${baseUrl}/admin/dashboard`
-        console.log('Redirecting to dashboard:', dashboardUrl)
+        console.log('Redirecting to admin dashboard:', dashboardUrl)
         return dashboardUrl
+      }
+      
+      if (url.includes('/student/login')) {
+        const studentDashboardUrl = `${baseUrl}/student/dashboard`
+        console.log('Redirecting to student dashboard:', studentDashboardUrl)
+        return studentDashboardUrl
       }
       
       // If url starts with /, it's a relative path
@@ -138,8 +202,8 @@ export const authOptions: AuthOptions = {
         return url
       }
       
-      // Default to dashboard
-      return `${baseUrl}/admin/dashboard`
+      // Default to homepage
+      return baseUrl
     }
   }
 }

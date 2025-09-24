@@ -110,7 +110,58 @@ async function main() {
     ]
   })
 
+  // Create sample students
+  const studentPassword = await bcrypt.hash('student123', 12)
+  
+  await prisma.student.createMany({
+    data: [
+      {
+        studentId: '2024001',
+        fullName: 'Ahmad Fahreza',
+        email: 'ahmad.fahreza@student.smawahidiyah.edu',
+        password: studentPassword,
+        class: 'XI-A',
+        phone: '08123456789',
+        address: 'Jl. Raya Kediri No. 123',
+        parentName: 'Bapak Ahmad Suryadi',
+        parentPhone: '08123456790',
+        status: 'active',
+        isVerified: true
+      },
+      {
+        studentId: '2024002', 
+        fullName: 'Siti Nurhaliza',
+        email: 'siti.nurhaliza@student.smawahidiyah.edu',
+        password: studentPassword,
+        class: 'XI-A',
+        phone: '08234567890',
+        address: 'Jl. Masjid Agung No. 45',
+        parentName: 'Ibu Siti Aminah',
+        parentPhone: '08234567891',
+        status: 'active',
+        isVerified: true
+      },
+      {
+        studentId: '2024003',
+        fullName: 'Muhammad Rizki',
+        email: 'muhammad.rizki@student.smawahidiyah.edu', 
+        password: studentPassword,
+        class: 'XI-B',
+        phone: '08345678901',
+        address: 'Jl. Pondok Pesantren No. 67',
+        parentName: 'Bapak Muhammad Yusuf',
+        parentPhone: '08345678902',
+        status: 'active',
+        isVerified: true
+      }
+    ]
+  })
+
   console.log('Database seeded successfully!')
+  console.log('Sample Student Accounts:')
+  console.log('- NIS: 2024001, Password: student123 (Ahmad Fahreza - XI-A)')
+  console.log('- NIS: 2024002, Password: student123 (Siti Nurhaliza - XI-A)')
+  console.log('- NIS: 2024003, Password: student123 (Muhammad Rizki - XI-B)')
 }
 
 main()

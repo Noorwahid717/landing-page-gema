@@ -165,9 +165,7 @@ model Assignment {
 model Submission {
   id               String   @id @default(cuid())
   assignmentId     String
-  studentName      String
-  studentId        String   // NIS or student identifier
-  studentEmail     String?
+  studentId        String   // Reference to Student model
   fileName         String
   originalFileName String
   filePath         String   // Cloud storage URL or local path
@@ -185,11 +183,40 @@ model Submission {
   
   // Relations
   assignment       Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  student          Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
   
   @@index([assignmentId])
   @@index([studentId])
   @@index([submittedAt])
   @@map("submissions")
+}
+
+model Student {
+  id          String   @id @default(cuid())
+  studentId   String   @unique // NIS atau nomor identitas siswa
+  email       String   @unique
+  password    String
+  fullName    String
+  class       String?  // Kelas siswa (X-A, XI-B, XII-C, dll)
+  phone       String?
+  address     String?
+  parentName  String?  // Nama orang tua/wali
+  parentPhone String?  // Telepon orang tua/wali
+  status      String   @default("active") // active, inactive, suspended
+  isVerified  Boolean  @default(false) // Email verification
+  profileImage String? // URL foto profil
+  joinedAt    DateTime @default(now())
+  lastLoginAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  submissions  Submission[]
+  
+  @@index([studentId])
+  @@index([status])
+  @@index([class])
+  @@map("students")
 }
 
 model Article {

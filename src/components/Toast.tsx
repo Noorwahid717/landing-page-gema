@@ -11,7 +11,7 @@ interface ToastProps {
   duration?: number;
 }
 
-export default function Toast({ message, type, isVisible, onClose, duration = 5000 }: ToastProps) {
+export function Toast({ message, type, isVisible, onClose, duration = 5000 }: ToastProps) {
   const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
@@ -67,3 +67,5 @@ export default function Toast({ message, type, isVisible, onClose, duration = 50
     </div>
   );
 }
+
+export default Toast;

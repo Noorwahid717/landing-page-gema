@@ -28,6 +28,12 @@ export async function GET(
             title: true,
             subject: true
           }
+        },
+        student: {
+          select: {
+            fullName: true,
+            studentId: true
+          }
         }
       }
     });
@@ -44,7 +50,7 @@ export async function GET(
       success: true,
       data: {
         id: submission.id,
-        studentName: submission.studentName,
+        studentName: submission.student.fullName,
         studentId: submission.studentId,
         fileName: submission.originalFileName,
         downloadUrl: submission.filePath, // Cloudinary URL
