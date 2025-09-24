@@ -31,58 +31,32 @@ export default function AdminLogin() {
     setLoadingMessage('Memverifikasi kredensial...')
 
     try {
-      // First try credentials check
-      const testResult = await signIn('credentials', {
-        email,
-        password,
-        redirect: false
-      })
-
-      console.log('Login test result:', testResult)
-
-      if (testResult?.error) {
-        setError('Email atau password salah. Pastikan kredensial admin benar.')
-        setToast({
-          show: true,
-          message: 'Login gagal! Periksa email dan password Anda.',
-          type: 'error'
-        })
-        setIsLoading(false)
-        setLoadingMessage('')
-      } else if (testResult?.ok) {
-        // Kredensial benar, sekarang redirect langsung
-        console.log('Credentials valid, redirecting...')
-        setSuccess(true)
-        setLoadingMessage('Login berhasil! Mengalihkan ke dashboard...')
-        setToast({
-          show: true,
-          message: '🎉 Login berhasil! Selamat datang Admin!',
-          type: 'success'
-        })
-        
-        // Use NextAuth redirect
-        await signIn('credentials', {
-          email,
-          password,
-          callbackUrl: '/admin/dashboard'
-        })
-        
-      } else {
-        setError('Login gagal. Silakan periksa koneksi dan coba lagi.')
-        setToast({
-          show: true,
-          message: 'Koneksi bermasalah. Silakan coba lagi.',
-          type: 'warning'
-        })
-        setIsLoading(false)
-        setLoadingMessage('')
-      }
-    } catch (err) {
-      console.error('Login error:', err)
-      setError('Terjadi kesalahan sistem. Silakan coba lagi atau hubungi administrator.')
+      console.log('Attempting login with email:', email)
+      
+      // Show loading feedback
       setToast({
         show: true,
-        message: 'Terjadi kesalahan sistem. Hubungi administrator jika masalah berlanjut.',
+        message: 'Memverifikasi kredensial...',
+        type: 'info'
+      })
+      
+      // Use NextAuth signIn with proper redirect handling
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: true, // Let NextAuth handle redirect
+        callbackUrl: '/admin/dashboard'
+      })
+
+      // This code won't execute if redirect: true works properly
+      console.log('Login result (should not see this):', result)
+      
+    } catch (error) {
+      console.error('Login error:', error)
+      setError('Terjadi kesalahan saat login. Silakan coba lagi.')
+      setToast({
+        show: true,
+        message: 'Terjadi kesalahan sistem. Silakan coba lagi.',
         type: 'error'
       })
       setIsLoading(false)

@@ -47,15 +47,30 @@ export const authOptions: AuthOptions = {
     })
   ],
   session: {
-    strategy: 'jwt' as const
+    strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
+  cookies: {
+    sessionToken: {
+      name: `next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        domain: process.env.NODE_ENV === 'production' ? '.vercel.app' : undefined
+      }
+    }
   },
   pages: {
     signIn: '/admin/login'
   },
+  debug: process.env.NODE_ENV === 'development',
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
         token.role = user.role
+        token.id = user.id
       }
       return token
     },
@@ -67,10 +82,27 @@ export const authOptions: AuthOptions = {
       return session
     },
     async redirect({ url, baseUrl }) {
-      // Handle redirect after login
-      if (url.startsWith('/')) return `${baseUrl}${url}`
-      else if (new URL(url).origin === baseUrl) return url
-      return baseUrl + '/admin/dashboard'
+      console.log('NextAuth redirect - url:', url, 'baseUrl:', baseUrl)
+      
+      // Always redirect to dashboard after successful login
+      if (url.includes('/admin/login') || url === baseUrl) {
+        const dashboardUrl = `${baseUrl}/admin/dashboard`
+        console.log('Redirecting to dashboard:', dashboardUrl)
+        return dashboardUrl
+      }
+      
+      // If url starts with /, it's a relative path
+      if (url.startsWith('/')) {
+        return `${baseUrl}${url}`
+      }
+      
+      // If url has same origin, allow it
+      if (new URL(url).origin === baseUrl) {
+        return url
+      }
+      
+      // Default to dashboard
+      return `${baseUrl}/admin/dashboard`
     }
   }
 }
