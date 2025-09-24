@@ -1,30 +1,61 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import dynamic from 'next/dynamic'
-import { 
-  BookOpen, 
-  Upload, 
-  User, 
-  Calendar, 
-  Clock, 
-  CheckCircle, 
+import {
+  BookOpen,
+  Upload,
+  Calendar,
+  Clock,
+  CheckCircle,
   AlertCircle,
   LogOut,
   FileText,
-  GraduationCap,
-  Bell
+  GraduationCap
 } from 'lucide-react'
 
-interface Submission {
+type ApiResponse<T> = {
+  success?: boolean
+  data?: T
+}
+
+interface ClassroomAssignmentResponse {
   id: string
+  title: string
+  description: string
+  subject: string
+  dueDate: string
+  status: string
+  maxSubmissions: number
+  submissionCount?: number
+  instructions?: string[]
+}
+
+interface ClassroomSubmissionResponse {
+  id: string
+  assignmentId: string
   fileName: string
   filePath: string
   submittedAt: string
   studentId: string
+  status?: string
+  isLate?: boolean
+  grade?: number | null
+  feedback?: string | null
+}
+
+interface Submission {
+  id: string
+  assignmentId: string
+  fileName: string
+  filePath: string
+  submittedAt: string
+  studentId: string
+  status?: string
+  isLate?: boolean
   grade?: number
   feedback?: string
 }
@@ -37,6 +68,8 @@ interface Assignment {
   dueDate: string
   status: string
   maxSubmissions: number
+  submissionCount?: number
+  instructions?: string[]
   submissions: Submission[]
 }
 
@@ -56,21 +89,80 @@ function StudentDashboardContent() {
     }
 
     fetchAssignments()
-  }, [session, status, router])
+  }, [session, status, router, fetchAssignments])
 
-  const fetchAssignments = async () => {
+  const fetchAssignments = useCallback(async () => {
     try {
-      const response = await fetch('/api/assignments')
-      if (response.ok) {
-        const data = await response.json()
-        setAssignments(data)
+      setLoading(true)
+
+      const response = await fetch('/api/classroom/assignments')
+      const result: ApiResponse<ClassroomAssignmentResponse[]> | null =
+        response.ok ? await response.json() : null
+      const assignmentsPayload =
+        result?.success && Array.isArray(result.data) ? result.data : []
+
+      let studentSubmissions: Submission[] = []
+
+      if (session?.user?.id) {
+        try {
+          const submissionsResponse = await fetch(
+            `/api/classroom/submissions?studentId=${encodeURIComponent(session.user.id)}`
+          )
+
+          if (submissionsResponse.ok) {
+            const submissionsResult: ApiResponse<
+              ClassroomSubmissionResponse[]
+            > = await submissionsResponse.json()
+
+            if (
+              submissionsResult?.success &&
+              Array.isArray(submissionsResult.data)
+            ) {
+              studentSubmissions = submissionsResult.data.map(
+                (submission: ClassroomSubmissionResponse) => ({
+                  id: submission.id,
+                  assignmentId: submission.assignmentId,
+                  fileName: submission.fileName,
+                  filePath: submission.filePath,
+                  submittedAt: submission.submittedAt,
+                  studentId: submission.studentId,
+                  status: submission.status,
+                  isLate: submission.isLate,
+                  grade: submission.grade ?? undefined,
+                  feedback: submission.feedback ?? undefined
+                })
+              )
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching student submissions:', error)
+        }
       }
+
+      const normalizedAssignments: Assignment[] = assignmentsPayload.map(
+        (assignment: ClassroomAssignmentResponse) => ({
+          id: assignment.id,
+          title: assignment.title,
+          description: assignment.description,
+          subject: assignment.subject,
+          dueDate: assignment.dueDate,
+          status: assignment.status,
+          maxSubmissions: assignment.maxSubmissions,
+          submissionCount: assignment.submissionCount,
+          instructions: assignment.instructions ?? [],
+          submissions: studentSubmissions.filter(
+            submission => submission.assignmentId === assignment.id
+          )
+        })
+      )
+
+      setAssignments(normalizedAssignments)
     } catch (error) {
       console.error('Error fetching assignments:', error)
     } finally {
       setLoading(false)
     }
-  }
+  }, [session?.user?.id])
 
   const getAssignmentStatus = (assignment: Assignment) => {
     const dueDate = new Date(assignment.dueDate)
