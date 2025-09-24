@@ -6,10 +6,10 @@ import { prisma } from '@/lib/prisma';
 // GET /api/classroom/articles/[id] - Get single article by ID or slug
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     
     // Try to find by ID first, then by slug
     const article = await prisma.article.findFirst({
@@ -56,7 +56,7 @@ export async function GET(
 // PATCH /api/classroom/articles/[id] - Update article (Admin only)
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -80,7 +80,7 @@ export async function PATCH(
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
 
     // Check if article exists
@@ -123,7 +123,19 @@ export async function PATCH(
     }
 
     // Prepare update data
-    const updateData: any = {};
+    const updateData: {
+      title?: string;
+      slug?: string;
+      excerpt?: string;
+      content?: string;
+      category?: string;
+      tags?: string;
+      status?: string;
+      publishedAt?: Date;
+      featured?: boolean;
+      imageUrl?: string;
+      readTime?: number;
+    } = {};
     
     if (title !== undefined) updateData.title = title;
     if (slug !== undefined) updateData.slug = slug;
@@ -165,7 +177,7 @@ export async function PATCH(
 // DELETE /api/classroom/articles/[id] - Delete article (Admin only)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -189,7 +201,7 @@ export async function DELETE(
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
 
     // Check if article exists
     const existingArticle = await prisma.article.findUnique({

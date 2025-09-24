@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
 import Link from "next/link";
 import { 
   ArrowLeft, 
@@ -10,12 +9,8 @@ import {
   Trash2, 
   Eye, 
   Search,
-  Filter,
-  Calendar,
   User,
   Clock,
-  Tag,
-  MoreVertical,
   ExternalLink,
   Newspaper
 } from "lucide-react";
@@ -108,7 +103,7 @@ export default function AdminArticlesPage() {
         setArticles(prev => 
           prev.map(article => 
             article.id === articleId 
-              ? { ...article, status: newStatus as any }
+              ? { ...article, status: newStatus as 'draft' | 'published' | 'archived' }
               : article
           )
         );
@@ -219,6 +214,7 @@ export default function AdminArticlesPage() {
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                title="Filter by category"
               >
                 {categories.map(category => (
                   <option key={category} value={category}>
@@ -230,6 +226,7 @@ export default function AdminArticlesPage() {
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                title="Filter by status"
               >
                 {statuses.map(status => (
                   <option key={status} value={status}>

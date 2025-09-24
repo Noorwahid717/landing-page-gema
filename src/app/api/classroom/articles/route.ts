@@ -14,7 +14,15 @@ export async function GET(request: NextRequest) {
     const page = searchParams.get('page');
 
     // Build filter object
-    const where: any = {};
+    const where: {
+      status?: string;
+      category?: string;
+      featured?: boolean;
+      OR?: Array<{
+        title?: { contains: string; mode: 'insensitive' };
+        excerpt?: { contains: string; mode: 'insensitive' };
+      }>;
+    } = {};
 
     // Add status filter only if not 'all'
     if (status && status !== 'all') {

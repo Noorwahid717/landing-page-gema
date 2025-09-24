@@ -84,7 +84,16 @@ export default function AdminClassroomPage() {
         const data = await response.json();
         if (data.success) {
           // Transform data untuk interface compatibility
-          const transformedSubmissions = data.data.map((sub: any) => ({
+          const transformedSubmissions = data.data.map((sub: {
+            id: string;
+            studentName: string;
+            studentId: string;
+            fileUrl: string;
+            fileName: string;
+            submittedAt: string;
+            isLate: boolean;
+            assignment: { id: string; title: string; };
+          }) => ({
             id: sub.id,
             studentName: sub.studentName,
             studentId: sub.studentId,

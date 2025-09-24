@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
       ).end(buffer);
     });
 
-    const cloudinaryResult = uploadResult as any;
+    const cloudinaryResult = uploadResult as { secure_url: string; public_id: string; original_filename: string };
 
     // Check if submission is late
     const now = new Date();

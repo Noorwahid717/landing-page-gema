@@ -7,11 +7,12 @@ const prisma = new PrismaClient();
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const assignment = await prisma.assignment.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         _count: {
           select: { submissions: true }
@@ -54,9 +55,10 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     
     if (!session || !session.user?.email) {
@@ -71,7 +73,7 @@ export async function PATCH(
 
     // Check if assignment exists
     const existingAssignment = await prisma.assignment.findUnique({
-      where: { id: params.id }
+      where: { id }
     });
 
     if (!existingAssignment) {
@@ -83,7 +85,7 @@ export async function PATCH(
 
     // Update assignment
     const updatedAssignment = await prisma.assignment.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...(title && { title }),
         ...(description && { description }),
