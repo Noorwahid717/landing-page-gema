@@ -23,7 +23,8 @@ import {
   MapPinIcon,
   ExternalLink,
   ChevronRight,
-  Star
+  Star,
+  GraduationCap
 } from "lucide-react";
 
 interface Activity {
@@ -221,6 +222,13 @@ export default function Home() {
               >
                 <BookOpen className="w-5 h-5" />
                 Classroom
+              </a>
+              <a
+                href="/student/login"
+                className="bg-white text-blue-600 font-bold py-4 px-8 rounded-full text-lg transition-all duration-300 transform hover:scale-105 inline-flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
+              >
+                <GraduationCap className="w-5 h-5" />
+                Login Siswa
               </a>
               <a
                 href="#daftar"
@@ -875,12 +883,20 @@ export default function Home() {
           <div className="border-t border-gray-800 mt-12 pt-8">
             <div className="flex flex-col md:flex-row justify-between items-center text-gray-400">
               <p>&copy; 2024 GEMA - Generasi Muda Informatika | SMA Wahidiyah Kediri. All rights reserved.</p>
-              <a 
-                href="/admin/login"
-                className="mt-4 md:mt-0 text-gray-500 hover:text-white transition-colors text-sm"
-              >
-                Admin Panel
-              </a>
+              <div className="mt-4 md:mt-0 flex items-center gap-4">
+                <a
+                  href="/student/login"
+                  className="text-gray-500 hover:text-white transition-colors text-sm"
+                >
+                  Login Siswa
+                </a>
+                <a
+                  href="/admin/login"
+                  className="text-gray-500 hover:text-white transition-colors text-sm"
+                >
+                  Admin Panel
+                </a>
+              </div>
             </div>
           </div>
         </div>
