@@ -16,6 +16,7 @@ Redirect login gagal karena environment variables belum di-set di Vercel, khusus
 ```bash
 NEXTAUTH_URL = https://landing-page-gema.vercel.app
 NEXTAUTH_SECRET = gema-sma-wahidiyah-super-secret-production-key-2025-kediri-$(openssl rand -base64 32)
+NEXTAUTH_COOKIE_DOMAIN = landing-page-gema.vercel.app
 DATABASE_URL = file:./prod.db
 ```
 
@@ -72,7 +73,7 @@ git push
 1. User login → NextAuth creates session
 2. Middleware validates token
 3. Automatic redirect to `/admin/dashboard`
-4. Session cookie tersimpan dengan domain `.vercel.app`
+4. Session cookie tersimpan otomatis mengikuti domain production (contoh: `landing-page-gema.vercel.app` atau custom domain sekolah)
 
 ---
 
