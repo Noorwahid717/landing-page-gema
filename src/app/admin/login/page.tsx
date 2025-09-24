@@ -31,15 +31,16 @@ export default function AdminLogin() {
     setLoadingMessage('Memverifikasi kredensial...')
 
     try {
-      const result = await signIn('credentials', {
+      // First try credentials check
+      const testResult = await signIn('credentials', {
         email,
         password,
         redirect: false
       })
 
-      console.log('Login result:', result)
+      console.log('Login test result:', testResult)
 
-      if (result?.error) {
+      if (testResult?.error) {
         setError('Email atau password salah. Pastikan kredensial admin benar.')
         setToast({
           show: true,
@@ -48,9 +49,9 @@ export default function AdminLogin() {
         })
         setIsLoading(false)
         setLoadingMessage('')
-      } else if (result?.ok) {
-        // Login successful - show success and redirect
-        console.log('Login successful, redirecting...')
+      } else if (testResult?.ok) {
+        // Kredensial benar, sekarang redirect langsung
+        console.log('Credentials valid, redirecting...')
         setSuccess(true)
         setLoadingMessage('Login berhasil! Mengalihkan ke dashboard...')
         setToast({
@@ -59,18 +60,13 @@ export default function AdminLogin() {
           type: 'success'
         })
         
-        // Wait a moment then redirect with multiple fallbacks
-        setTimeout(() => {
-          setLoadingMessage('Memuat dashboard admin...')
-          
-          // Try Next.js router first
-          router.push('/admin/dashboard')
-          
-          // Fallback: force redirect after delay
-          setTimeout(() => {
-            window.location.href = '/admin/dashboard'
-          }, 2000)
-        }, 1500)
+        // Use NextAuth redirect
+        await signIn('credentials', {
+          email,
+          password,
+          callbackUrl: '/admin/dashboard'
+        })
+        
       } else {
         setError('Login gagal. Silakan periksa koneksi dan coba lagi.')
         setToast({
