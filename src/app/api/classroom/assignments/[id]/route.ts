@@ -132,9 +132,10 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     
     if (!session || !session.user?.email) {
@@ -146,7 +147,7 @@ export async function DELETE(
 
     // Check if assignment exists
     const existingAssignment = await prisma.assignment.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         _count: {
           select: { submissions: true }
@@ -171,7 +172,7 @@ export async function DELETE(
 
     // Delete assignment (submissions will be deleted by CASCADE)
     await prisma.assignment.delete({
-      where: { id: params.id }
+      where: { id }
     });
 
     return NextResponse.json({

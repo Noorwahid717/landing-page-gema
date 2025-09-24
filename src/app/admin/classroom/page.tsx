@@ -97,11 +97,11 @@ export default function AdminClassroomPage() {
             id: sub.id,
             studentName: sub.studentName,
             studentId: sub.studentId,
-            assignmentId: sub.assignmentId,
-            fileName: sub.originalFileName || sub.fileName,
-            fileUrl: sub.filePath,
+            assignmentId: sub.assignment.id,
+            fileName: sub.fileName,
+            fileUrl: sub.fileUrl,
             submittedAt: sub.submittedAt,
-            status: sub.status
+            isLate: sub.isLate
           }));
           setSubmissions(transformedSubmissions);
         }

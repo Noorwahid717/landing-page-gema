@@ -21,7 +21,7 @@ export async function GET(
     }
 
     const submission = await prisma.submission.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         assignment: {
           select: {
@@ -64,9 +64,10 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     
     if (!session || !session.user?.email) {
@@ -92,7 +93,7 @@ export async function PATCH(
     }
 
     const updatedSubmission = await prisma.submission.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...(status && { status }),
         ...(grade !== undefined && { grade }),
