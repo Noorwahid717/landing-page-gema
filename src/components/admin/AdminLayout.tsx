@@ -16,7 +16,8 @@ import {
   Megaphone,
   MessageCircle,
   UsersRound,
-  GraduationCap
+  GraduationCap,
+  LayoutTemplate
 } from 'lucide-react'
 import Image from 'next/image'
 import NotificationPanel from './NotificationPanel'
@@ -38,6 +39,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { name: 'Pendaftaran', href: '/admin/registrations', icon: UserPlus },
     { name: 'Kegiatan', href: '/admin/activities', icon: Calendar },
     { name: 'Galeri', href: '/admin/gallery', icon: ImageIcon },
+    { name: 'Portfolio', href: '/admin/portfolio', icon: LayoutTemplate },
     { name: 'Pengumuman', href: '/admin/announcements', icon: Megaphone },
     { name: 'Siswa', href: '/admin/students', icon: GraduationCap },
     { name: 'Admin', href: '/admin/users', icon: Users },
