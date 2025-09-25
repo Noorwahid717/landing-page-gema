@@ -3,50 +3,30 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { 
-  BookOpen, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Users, 
-  FileText, 
+import {
+  BookOpen,
+  Plus,
+  Edit,
+  Trash2,
+  Users,
+  FileText,
   Calendar,
   ArrowLeft,
   Eye,
   Download
 } from "lucide-react";
-
-interface Assignment {
-  id: string;
-  title: string;
-  description: string;
-  subject: string;
-  dueDate: string;
-  submissionCount: number;
-  maxSubmissions: number;
-  status: 'active' | 'closed' | 'upcoming';
-  createdAt: string;
-  instructions?: string[];
-}
-
-interface Submission {
-  id: string;
-  studentName: string;
-  studentId: string;
-  assignmentId: string;
-  fileName: string;
-  fileUrl: string;
-  submittedAt: string;
-  status: 'submitted' | 'late' | 'reviewed';
-}
+import type {
+  ClassroomAssignmentResponse,
+  ClassroomSubmissionResponse
+} from "@/types/classroom";
 
 export default function AdminClassroomPage() {
-  const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [submissions, setSubmissions] = useState<Submission[]>([]);
-  const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
+  const [assignments, setAssignments] = useState<ClassroomAssignmentResponse[]>([]);
+  const [submissions, setSubmissions] = useState<ClassroomSubmissionResponse[]>([]);
+  const [selectedAssignment, setSelectedAssignment] = useState<ClassroomAssignmentResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
+  const [editingAssignment, setEditingAssignment] = useState<ClassroomAssignmentResponse | null>(null);
   const [newAssignment, setNewAssignment] = useState({
     title: "",
     description: "",
@@ -82,28 +62,24 @@ export default function AdminClassroomPage() {
       const response = await fetch('/api/classroom/submissions');
       if (response.ok) {
         const data = await response.json();
-        if (data.success) {
-          // Transform data untuk interface compatibility
-          const transformedSubmissions = data.data.map((sub: {
-            id: string;
-            studentName: string;
-            studentId: string;
-            fileUrl: string;
-            fileName: string;
-            submittedAt: string;
-            isLate: boolean;
-            assignment: { id: string; title: string; };
-          }) => ({
-            id: sub.id,
-            studentName: sub.studentName,
-            studentId: sub.studentId,
-            assignmentId: sub.assignment.id,
-            fileName: sub.fileName,
-            fileUrl: sub.fileUrl,
-            submittedAt: sub.submittedAt,
-            isLate: sub.isLate
-          }));
-          setSubmissions(transformedSubmissions);
+        if (data.success && Array.isArray(data.data)) {
+          const normalizedSubmissions: ClassroomSubmissionResponse[] = data.data.map(
+            (submission: ClassroomSubmissionResponse) => ({
+              id: submission.id,
+              studentName: submission.studentName,
+              studentId: submission.studentId,
+              assignmentId: submission.assignmentId,
+              fileName: submission.fileName,
+              filePath: submission.filePath ?? submission.fileUrl,
+              fileUrl: submission.fileUrl ?? submission.filePath,
+              submittedAt: submission.submittedAt,
+              status: submission.status ?? (submission.isLate ? 'late' : 'submitted'),
+              isLate: submission.isLate ?? false,
+              grade: submission.grade ?? null,
+              feedback: submission.feedback ?? null
+            })
+          );
+          setSubmissions(normalizedSubmissions);
         }
       }
     } catch (error) {
@@ -150,7 +126,7 @@ export default function AdminClassroomPage() {
     }
   };
 
-  const handleEditAssignment = (assignment: Assignment) => {
+  const handleEditAssignment = (assignment: ClassroomAssignmentResponse) => {
     setEditingAssignment(assignment);
     setNewAssignment({
       title: assignment.title,
@@ -193,7 +169,7 @@ export default function AdminClassroomPage() {
     }
   };
 
-  const handleDownloadSubmission = async (submissionId: string, fileName: string) => {
+  const handleDownloadSubmission = async (submissionId: string) => {
     try {
       const response = await fetch(`/api/classroom/submissions/${submissionId}`);
       if (response.ok) {
@@ -726,7 +702,7 @@ export default function AdminClassroomPage() {
                           </td>
                           <td className="px-4 py-3">
                             <button
-                              onClick={() => handleDownloadSubmission(submission.id, submission.fileName)}
+                              onClick={() => handleDownloadSubmission(submission.id)}
                               className="text-blue-600 hover:text-blue-900 p-1 rounded"
                               title="Download file"
                             >

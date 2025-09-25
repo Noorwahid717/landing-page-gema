@@ -16,67 +16,21 @@ import {
   FileText,
   GraduationCap
 } from 'lucide-react'
+import type {
+  AssignmentWithSubmissions,
+  ClassroomAssignmentResponse,
+  ClassroomSubmissionResponse
+} from '@/types/classroom'
 
 type ApiResponse<T> = {
   success?: boolean
   data?: T
 }
 
-interface ClassroomAssignmentResponse {
-  id: string
-  title: string
-  description: string
-  subject: string
-  dueDate: string
-  status: string
-  maxSubmissions: number
-  submissionCount?: number
-  instructions?: string[]
-}
-
-interface ClassroomSubmissionResponse {
-  id: string
-  assignmentId: string
-  fileName: string
-  filePath: string
-  submittedAt: string
-  studentId: string
-  status?: string
-  isLate?: boolean
-  grade?: number | null
-  feedback?: string | null
-}
-
-interface Submission {
-  id: string
-  assignmentId: string
-  fileName: string
-  filePath: string
-  submittedAt: string
-  studentId: string
-  status?: string
-  isLate?: boolean
-  grade?: number
-  feedback?: string
-}
-
-interface Assignment {
-  id: string
-  title: string
-  description: string
-  subject: string
-  dueDate: string
-  status: string
-  maxSubmissions: number
-  submissionCount?: number
-  instructions?: string[]
-  submissions: Submission[]
-}
-
 function StudentDashboardContent() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const [assignments, setAssignments] = useState<Assignment[]>([])
+  const [assignments, setAssignments] = useState<AssignmentWithSubmissions[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('assignments')
 
@@ -87,10 +41,10 @@ function StudentDashboardContent() {
       const response = await fetch('/api/classroom/assignments')
       const result: ApiResponse<ClassroomAssignmentResponse[]> | null =
         response.ok ? await response.json() : null
-      const assignmentsPayload =
+      const assignmentsPayload: ClassroomAssignmentResponse[] =
         result?.success && Array.isArray(result.data) ? result.data : []
 
-      let studentSubmissions: Submission[] = []
+      let studentSubmissions: ClassroomSubmissionResponse[] = []
       if (session?.user?.id) {
         try {
           const submissionsResponse = await fetch(
@@ -111,9 +65,10 @@ function StudentDashboardContent() {
                   id: submission.id,
                   assignmentId: submission.assignmentId,
                   fileName: submission.fileName,
-                  filePath: submission.filePath,
+                  filePath: submission.filePath ?? submission.fileUrl,
                   submittedAt: submission.submittedAt,
                   studentId: submission.studentId,
+                  studentName: submission.studentName,
                   status: submission.status,
                   isLate: submission.isLate,
                   grade: submission.grade ?? undefined,
@@ -127,7 +82,7 @@ function StudentDashboardContent() {
         }
       }
 
-      const normalizedAssignments: Assignment[] = assignmentsPayload.map(
+      const normalizedAssignments: AssignmentWithSubmissions[] = assignmentsPayload.map(
         (assignment: ClassroomAssignmentResponse) => ({
           id: assignment.id,
           title: assignment.title,
@@ -163,7 +118,7 @@ function StudentDashboardContent() {
     fetchAssignments()
   }, [session, status, router, fetchAssignments])
 
-  const getAssignmentStatus = (assignment: Assignment) => {
+  const getAssignmentStatus = (assignment: AssignmentWithSubmissions) => {
     const dueDate = new Date(assignment.dueDate)
     const now = new Date()
     const submitted = assignment.submissions.some(s => s.studentId === session?.user.id)

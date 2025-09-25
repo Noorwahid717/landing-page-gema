@@ -3,15 +3,14 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { 
-  BookOpen, 
-  Upload, 
-  FileText, 
-  Calendar, 
-  User, 
+import {
+  BookOpen,
+  Upload,
+  FileText,
+  Calendar,
+  User,
   ArrowLeft,
   Folder,
-  Download,
   Clock,
   CheckCircle,
   AlertCircle,
@@ -21,17 +20,7 @@ import {
   Eye,
   Search
 } from "lucide-react";
-
-interface Assignment {
-  id: string;
-  title: string;
-  description: string;
-  subject: string;
-  dueDate: string;
-  submissionCount: number;
-  maxSubmissions: number;
-  status: 'active' | 'closed' | 'upcoming';
-}
+import type { ClassroomAssignmentResponse } from "@/types/classroom";
 
 interface Article {
   id: string;
@@ -48,23 +37,11 @@ interface Article {
   publishedAt: string;
 }
 
-interface StudentSubmission {
-  id: string;
-  studentName: string;
-  studentId: string;
-  assignmentId: string;
-  fileName: string;
-  fileUrl: string;
-  submittedAt: string;
-  status: 'submitted' | 'late' | 'reviewed';
-}
-
 export default function ClassroomPage() {
   const [activeTab, setActiveTab] = useState<'assignments' | 'articles'>('assignments');
-  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [assignments, setAssignments] = useState<ClassroomAssignmentResponse[]>([]);
   const [articles, setArticles] = useState<Article[]>([]);
-  const [submissions, setSubmissions] = useState<StudentSubmission[]>([]);
-  const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
+  const [selectedAssignment, setSelectedAssignment] = useState<ClassroomAssignmentResponse | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -148,19 +125,6 @@ export default function ClassroomPage() {
       const result = await response.json();
 
       if (response.ok && result.success) {
-        const newSubmission: StudentSubmission = {
-          id: result.submission.id,
-          studentName,
-          studentId,
-          assignmentId: selectedAssignment.id,
-          fileName: uploadFile.name,
-          fileUrl: result.submission.filePath,
-          submittedAt: result.submission.submittedAt,
-          status: result.submission.status
-        };
-
-        setSubmissions(prev => [...prev, newSubmission]);
-        
         // Reset form
         setUploadFile(null);
         setStudentName("");
