@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
+import { seedPortfolio } from './seed-portfolio'
 
 const prisma = new PrismaClient()
 
@@ -162,6 +163,9 @@ async function main() {
   console.log('- NIS: 2024001, Password: student123 (Ahmad Fahreza - XI-A)')
   console.log('- NIS: 2024002, Password: student123 (Siti Nurhaliza - XI-A)')
   console.log('- NIS: 2024003, Password: student123 (Muhammad Rizki - XI-B)')
+
+  // Seed portfolio assignment and sample submission snapshot
+  await seedPortfolio(prisma)
 }
 
 main()
