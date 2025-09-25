@@ -3,19 +3,20 @@
 import { signOut, useSession } from 'next-auth/react'
 import { useState } from 'react'
 import { 
-  Menu, 
-  X, 
-  Home, 
-  Users, 
-  MessageSquare, 
-  UserPlus, 
-  Calendar, 
-  Settings, 
+  Menu,
+  X,
+  Home,
+  Users,
+  MessageSquare,
+  UserPlus,
+  Calendar,
+  Settings,
   LogOut,
   Image as ImageIcon,
   Megaphone,
   MessageCircle,
-  UsersRound
+  UsersRound,
+  GraduationCap
 } from 'lucide-react'
 import Image from 'next/image'
 import NotificationPanel from './NotificationPanel'
@@ -38,6 +39,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     { name: 'Kegiatan', href: '/admin/activities', icon: Calendar },
     { name: 'Galeri', href: '/admin/gallery', icon: ImageIcon },
     { name: 'Pengumuman', href: '/admin/announcements', icon: Megaphone },
+    { name: 'Siswa', href: '/admin/students', icon: GraduationCap },
     { name: 'Admin', href: '/admin/users', icon: Users },
     { name: 'Pengaturan', href: '/admin/settings', icon: Settings },
   ]
