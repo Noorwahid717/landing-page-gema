@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth-config'
 import { prisma } from '@/lib/prisma'
@@ -16,15 +16,16 @@ function parseTags(value?: string | string[] | null): string[] {
   return Array.from(new Set(normalized)).slice(0, MAX_TAGS)
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(request: Request) {
   const session = await getServerSession(authOptions)
 
   if (!session) {
     return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 })
   }
 
-  const classLevel = request.nextUrl.searchParams.get('classLevel') ?? undefined
-  const includeInactive = request.nextUrl.searchParams.get('includeInactive') === 'true'
+  const searchParams = new URL(request.url).searchParams
+  const classLevel = searchParams.get('classLevel') ?? undefined
+  const includeInactive = searchParams.get('includeInactive') === 'true'
 
   const tasks = await prisma.portfolioTask.findMany({
     where: {
@@ -49,7 +50,7 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({ success: true, data })
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   const session = await getServerSession(authOptions)
 
   if (!session || session.user.userType !== 'admin') {

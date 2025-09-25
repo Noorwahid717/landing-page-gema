@@ -1,10 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth-config'
 import { prisma } from '@/lib/prisma'
 import { PortfolioArtifactType, PortfolioSubmissionStatus } from '@prisma/client'
 
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params
   const session = await getServerSession(authOptions)
 
   if (!session || session.user.userType !== 'student') {
@@ -12,7 +16,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   }
 
   const submission = await prisma.portfolioSubmission.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       task: true
     }
@@ -22,11 +26,11 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     return NextResponse.json({ error: 'Submission tidak ditemukan' }, { status: 404 })
   }
 
-  if (
-    ![PortfolioSubmissionStatus.DRAFT, PortfolioSubmissionStatus.RETURNED].includes(
-      submission.status
-    )
-  ) {
+  const isEditableStatus =
+    submission.status === PortfolioSubmissionStatus.DRAFT ||
+    submission.status === PortfolioSubmissionStatus.RETURNED
+
+  if (!isEditableStatus) {
     return NextResponse.json({ error: 'Submission sudah dikirim' }, { status: 409 })
   }
 

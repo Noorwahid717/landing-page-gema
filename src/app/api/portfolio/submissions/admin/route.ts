@@ -1,18 +1,18 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth-config'
 import { prisma } from '@/lib/prisma'
 import { normalizeTags } from '@/lib/portfolio'
 import { PortfolioSubmissionStatus } from '@prisma/client'
 
-export async function GET(request: NextRequest) {
+export async function GET(request: Request) {
   const session = await getServerSession(authOptions)
 
   if (!session || session.user.userType !== 'admin') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
   }
 
-  const searchParams = request.nextUrl.searchParams
+  const searchParams = new URL(request.url).searchParams
   const classLevel = searchParams.get('classLevel') ?? undefined
   const status = searchParams.get('status') ?? undefined
   const tag = searchParams.get('tag') ?? undefined

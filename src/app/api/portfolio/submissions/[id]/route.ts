@@ -1,10 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth-config'
 import { prisma } from '@/lib/prisma'
 import { normalizeTags } from '@/lib/portfolio'
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params
   const session = await getServerSession(authOptions)
 
   if (!session) {
@@ -12,7 +16,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 
   const submission = await prisma.portfolioSubmission.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       student: true,
       task: true,

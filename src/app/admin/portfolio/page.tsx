@@ -228,14 +228,14 @@ export default function AdminPortfolioPage() {
         throw new Error(errPayload.error || 'Gagal menyimpan penilaian')
       }
 
-      const result: ApiResponse<{ evaluation: AdminPortfolioSubmission['evaluation'] }> =
+      const result: ApiResponse<{ evaluation: NonNullable<AdminPortfolioSubmission['evaluation']> }> =
         await response.json()
 
       const updated: AdminPortfolioSubmission = {
         ...selected,
         status: statusToApply,
         grade: statusToApply === PortfolioSubmissionStatus.GRADED ? totalScore : null,
-        evaluation: result.data ?? null
+        evaluation: result.data?.evaluation ?? null
       }
 
       setSelected(updated)

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth-config'
 import { prisma } from '@/lib/prisma'
@@ -12,15 +12,16 @@ function validateEditorSize(label: string, value?: string | null) {
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(request: Request) {
   const session = await getServerSession(authOptions)
 
   if (!session) {
     return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 })
   }
 
-  const taskId = request.nextUrl.searchParams.get('taskId') ?? undefined
-  const studentIdParam = request.nextUrl.searchParams.get('studentId') ?? undefined
+  const { searchParams } = new URL(request.url)
+  const taskId = searchParams.get('taskId') ?? undefined
+  const studentIdParam = searchParams.get('studentId') ?? undefined
 
   const isStudent = session.user.userType === 'student'
   const studentId = isStudent ? session.user.id : studentIdParam
@@ -115,7 +116,7 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({ success: true, data })
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   const session = await getServerSession(authOptions)
 
   if (!session || session.user.userType !== 'student') {
@@ -201,12 +202,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Tugas ini sudah ditutup' }, { status: 400 })
   }
 
-  if (
+  const canContinueExisting =
     existingSubmission &&
-    ![PortfolioSubmissionStatus.DRAFT, PortfolioSubmissionStatus.RETURNED].includes(
-      existingSubmission.status
-    )
-  ) {
+    (existingSubmission.status === PortfolioSubmissionStatus.DRAFT ||
+      existingSubmission.status === PortfolioSubmissionStatus.RETURNED)
+
+  if (existingSubmission && !canContinueExisting) {
     return NextResponse.json({
       error: 'Pengumpulan sudah terkunci karena telah dikirim atau dinilai'
     }, { status: 409 })

@@ -119,10 +119,11 @@ export default function PortfolioSubmissionPage() {
 
   const canSubmit = useMemo(() => {
     if (!submission) return true
-    return [
-      PortfolioSubmissionStatus.DRAFT,
-      PortfolioSubmissionStatus.RETURNED
-    ].includes(submission.status)
+
+    return (
+      submission.status === PortfolioSubmissionStatus.DRAFT ||
+      submission.status === PortfolioSubmissionStatus.RETURNED
+    )
   }, [submission])
 
   const hydrateEditorFromSubmission = useCallback((data: PortfolioSubmission) => {
@@ -187,14 +188,16 @@ export default function PortfolioSubmissionPage() {
       return
     }
 
-    setClassLevel(session.user.class || '')
+    const userSession = session
+
+    setClassLevel(userSession.user.class || '')
 
     async function fetchData() {
       try {
         setLoading(true)
         const params = new URLSearchParams()
-        if (session.user.class) {
-          params.set('classLevel', session.user.class)
+        if (userSession.user.class) {
+          params.set('classLevel', userSession.user.class)
         }
         const tasksResponse = await fetch(`/api/portfolio/tasks?${params.toString()}`)
         if (tasksResponse.ok) {
