@@ -13,6 +13,8 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:seed": "prisma db seed",
+    "db:seed-tutorials": "npx tsx prisma/seed-tutorial-articles.ts",
+    "db:update-first-tutorial": "npx tsx prisma/update-first-tutorial.ts",
     "db:migrate": "bash migrate-to-postgres.sh",
     "vercel:force-deploy": "vercel --prod --force",
     "vercel:build": "npm run build"
@@ -40,7 +42,8 @@
     "next-auth": "^4.24.11",
     "prisma": "^6.16.2",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "tsx": "^4.20.6"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

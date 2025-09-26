@@ -139,6 +139,13 @@ export default function ClassroomPage() {
   const [roadmapProgress, setRoadmapProgress] = useState<Record<string, ProjectProgressState>>(() =>
     createEmptyProgress(DEFAULT_PROJECTS)
   );
+  
+  // Enhanced features state
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [selectedArticleForFeedback, setSelectedArticleForFeedback] = useState<Article | null>(null);
+  const [feedbackRating, setFeedbackRating] = useState(0);
+  const [feedbackComment, setFeedbackComment] = useState('');
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
 
   useEffect(() => {
     fetchAssignments();
@@ -357,6 +364,49 @@ export default function ClassroomPage() {
       case 'upcoming': return 'bg-blue-100 text-blue-800';
       default: return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  // Enhanced feedback functions
+  const handleFeedbackSubmit = async () => {
+    if (!selectedArticleForFeedback || feedbackRating === 0) return;
+    
+    setIsSubmittingFeedback(true);
+    try {
+      // Send feedback to API
+      const response = await fetch('/api/classroom/feedback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          articleId: selectedArticleForFeedback.id,
+          rating: feedbackRating,
+          comment: feedbackComment,
+          timestamp: new Date().toISOString()
+        }),
+      });
+
+      if (response.ok) {
+        // Reset feedback form
+        setFeedbackRating(0);
+        setFeedbackComment('');
+        setShowFeedbackModal(false);
+        setSelectedArticleForFeedback(null);
+        
+        // Show success message (you can implement toast notification)
+        alert('Terima kasih atas feedback-nya! 🙏');
+      }
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+      alert('Gagal mengirim feedback. Silakan coba lagi.');
+    } finally {
+      setIsSubmittingFeedback(false);
+    }
+  };
+
+  const openFeedbackModal = (article: Article) => {
+    setSelectedArticleForFeedback(article);
+    setShowFeedbackModal(true);
   };
 
   const getStatusIcon = (status: string) => {
@@ -667,6 +717,65 @@ export default function ClassroomPage() {
                         return null;
                       }
                     })()}
+
+                    {/* Enhanced Action Buttons */}
+                    <div className="mt-4 pt-4 border-t space-y-3">
+                      {/* Primary Read Button */}
+                      <Link
+                        href={`/classroom/articles/${article.slug}`}
+                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium py-3 px-4 rounded-lg transition-all transform hover:scale-105 flex items-center justify-center gap-2 shadow-md"
+                      >
+                        <BookOpen className="w-4 h-4" />
+                        Baca Tutorial
+                        <Sparkles className="w-4 h-4" />
+                      </Link>
+                      
+                      {/* Integration Links */}
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            // Find related project
+                            const relatedProject = DEFAULT_PROJECTS.find(project => 
+                              project.title.toLowerCase().includes(article.title.toLowerCase().split(' ')[1]) ||
+                              (typeof article.tags === 'string' ? JSON.parse(article.tags) : article.tags).some((tag: string) => 
+                                project.title.toLowerCase().includes(tag.toLowerCase())
+                              )
+                            );
+                            if (relatedProject) {
+                              setActiveTab('roadmap');
+                              // Scroll to related project
+                              setTimeout(() => {
+                                const element = document.getElementById(`project-${relatedProject.id}`);
+                                element?.scrollIntoView({ behavior: 'smooth' });
+                              }, 100);
+                            }
+                          }}
+                          className="flex-1 bg-green-50 hover:bg-green-100 text-green-700 font-medium py-2 px-3 rounded-lg transition-colors flex items-center justify-center gap-2 border border-green-200"
+                        >
+                          <Target className="w-4 h-4" />
+                          <span className="text-sm">Project</span>
+                        </button>
+                        
+                        <button
+                          onClick={() => {
+                            // Open learning path modal or redirect
+                            window.open(`/classroom/learning-path?article=${article.slug}`, '_blank');
+                          }}
+                          className="flex-1 bg-purple-50 hover:bg-purple-100 text-purple-700 font-medium py-2 px-3 rounded-lg transition-colors flex items-center justify-center gap-2 border border-purple-200"
+                        >
+                          <ListChecks className="w-4 h-4" />
+                          <span className="text-sm">Path</span>
+                        </button>
+                        
+                        <button
+                          onClick={() => openFeedbackModal(article)}
+                          className="flex-1 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 font-medium py-2 px-3 rounded-lg transition-colors flex items-center justify-center gap-2 border border-yellow-200"
+                        >
+                          <Sparkles className="w-4 h-4" />
+                          <span className="text-sm">Rating</span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </motion.div>
               ))}
@@ -1046,6 +1155,110 @@ export default function ClassroomPage() {
               </form>
             </div>
           </motion.div>
+        )}
+
+        {/* Feedback Modal */}
+        {showFeedbackModal && selectedArticleForFeedback && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-xl p-6 max-w-md w-full shadow-2xl"
+            >
+              <div className="text-center mb-6">
+                <div className="mx-auto w-16 h-16 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mb-4">
+                  <Sparkles className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-800 mb-2">
+                  Berikan Rating & Feedback
+                </h3>
+                <p className="text-gray-600 text-sm">
+                  {selectedArticleForFeedback.title}
+                </p>
+              </div>
+
+              {/* Star Rating */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Rating Tutorial:
+                </label>
+                <div className="flex justify-center gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setFeedbackRating(star)}
+                      className={`text-3xl transition-colors ${
+                        star <= feedbackRating 
+                          ? 'text-yellow-400 hover:text-yellow-500' 
+                          : 'text-gray-300 hover:text-yellow-300'
+                      }`}
+                    >
+                      ⭐
+                    </button>
+                  ))}
+                </div>
+                <p className="text-center text-sm text-gray-500 mt-2">
+                  {feedbackRating === 0 ? 'Pilih rating' : 
+                   feedbackRating === 1 ? 'Kurang banget 😞' :
+                   feedbackRating === 2 ? 'Kurang 😐' :
+                   feedbackRating === 3 ? 'Cukup 🙂' :
+                   feedbackRating === 4 ? 'Bagus! 😊' : 
+                   'Luar biasa! 🤩'}
+                </p>
+              </div>
+
+              {/* Comment */}
+              <div className="mb-6">
+                <label htmlFor="feedback-comment" className="block text-sm font-medium text-gray-700 mb-2">
+                  Komentar & Saran (opsional):
+                </label>
+                <textarea
+                  id="feedback-comment"
+                  value={feedbackComment}
+                  onChange={(e) => setFeedbackComment(e.target.value)}
+                  placeholder="Ceritakan pengalaman belajar kamu... Apa yang bisa diperbaiki?"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent resize-none"
+                  rows={4}
+                />
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowFeedbackModal(false);
+                    setSelectedArticleForFeedback(null);
+                    setFeedbackRating(0);
+                    setFeedbackComment('');
+                  }}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={handleFeedbackSubmit}
+                  disabled={feedbackRating === 0 || isSubmittingFeedback}
+                  className="flex-1 px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg hover:from-yellow-600 hover:to-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isSubmittingFeedback ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Mengirim...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      Kirim Feedback
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
         )}
 
       </div>

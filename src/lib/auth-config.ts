@@ -168,7 +168,7 @@ export const authOptions: AuthOptions = {
     },
     async session({ session, token }) {
       if (token) {
-        session.user.id = token.sub!
+        session.user.id = token.id as string // Use actual user ID, not JWT sub
         session.user.role = token.role as string
         session.user.userType = token.userType as string
         session.user.studentId = token.studentId as string

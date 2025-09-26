@@ -364,6 +364,7 @@ model Student {
   // Relations
   submissions         Submission[]
   PortfolioSubmission PortfolioSubmission[]
+  ArticleFeedback     ArticleFeedback[]
 
   @@index([studentId])
   @@index([status])
@@ -372,27 +373,56 @@ model Student {
 }
 
 model Article {
-  id          String    @id @default(cuid())
-  title       String
-  slug        String    @unique
-  excerpt     String? // Short description
-  content     String // Full article content (HTML/Markdown)
-  category    String // tutorial, news, technology, programming, etc.
-  tags        String? // JSON array of tags
-  author      String // Author name
-  authorId    String // Admin ID
-  status      String    @default("draft") // draft, published, archived
-  featured    Boolean   @default(false)
-  imageUrl    String? // Featured image
-  readTime    Int? // Estimated read time in minutes
-  views       Int       @default(0)
-  publishedAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id            String    @id @default(cuid())
+  title         String
+  slug          String    @unique
+  excerpt       String? // Short description
+  content       String // Full article content (HTML/Markdown)
+  category      String // tutorial, news, technology, programming, etc.
+  tags          String? // JSON array of tags
+  author        String // Author name
+  authorId      String // Admin ID
+  status        String    @default("draft") // draft, published, archived
+  featured      Boolean   @default(false)
+  imageUrl      String? // Featured image
+  readTime      Int? // Estimated read time in minutes
+  views         Int       @default(0)
+  averageRating Float? // Average user rating
+  totalFeedback Int       @default(0) // Total feedback count
+  publishedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  feedback ArticleFeedback[]
 
   @@index([status])
   @@index([category])
   @@index([publishedAt])
   @@index([featured])
   @@map("articles")
+}
+
+model ArticleFeedback {
+  id        String   @id @default(cuid())
+  articleId String
+  studentId String? // Optional: for authenticated students
+  rating    Int // 1-5 stars
+  comment   String? // Optional feedback comment
+  challenge String? // What was most challenging
+  checklist Json? // Testing checklist results
+  userAgent String? // Browser information
+  ipAddress String? // For spam prevention
+  timestamp DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  // Relations
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  student Student? @relation(fields: [studentId], references: [id], onDelete: SetNull)
+
+  @@index([articleId])
+  @@index([studentId])
+  @@index([rating])
+  @@index([timestamp])
+  @@map("article_feedback")
 }

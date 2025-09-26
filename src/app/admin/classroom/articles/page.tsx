@@ -12,7 +12,8 @@ import {
   User,
   Clock,
   ExternalLink,
-  Newspaper
+  Newspaper,
+  MessageCircle
 } from "lucide-react";
 
 interface Article {
@@ -330,6 +331,13 @@ export default function AdminArticlesPage() {
                           title="Lihat artikel"
                         >
                           <ExternalLink className="w-4 h-4" />
+                        </Link>
+                        <Link
+                          href={`/admin/classroom/articles/${article.id}/feedback`}
+                          className="text-gray-400 hover:text-green-600 transition-colors"
+                          title="Lihat feedback"
+                        >
+                          <MessageCircle className="w-4 h-4" />
                         </Link>
                         <Link
                           href={`/admin/classroom/articles/${article.id}/edit`}

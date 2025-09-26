@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { 
   ArrowLeft, 
   Calendar, 
@@ -13,7 +14,19 @@ import {
   Tag, 
   Share2, 
   BookOpen,
-  Newspaper
+  Newspaper,
+  Zap,
+  ArrowRight,
+  Users,
+  CheckSquare,
+  Star,
+  MessageCircle,
+  Sparkles,
+  ExternalLink,
+  FolderOpen,
+  Award,
+  Send,
+  LogIn
 } from "lucide-react";
 
 interface Article {
@@ -38,16 +51,44 @@ interface Article {
 export default function ArticleDetailPage() {
   const params = useParams();
   const slug = params.slug as string;
+  const { data: session, status } = useSession();
   
   const [article, setArticle] = useState<Article | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Feedback State
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [feedback, setFeedback] = useState('');
+  const [challenge, setChallenge] = useState('');
+  const [submittingFeedback, setSubmittingFeedback] = useState(false);
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+
+  // Real feedback data
+  const [realFeedback, setRealFeedback] = useState<any[]>([]);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+  
+  // Testing Checklist State
+  const [checklist, setChecklist] = useState({
+    responsive: false,
+    lightbox: false,
+    performance: false,
+    hover: false,
+    navigation: false
+  });
 
   useEffect(() => {
     if (slug) {
       fetchArticle();
     }
   }, [slug]);
+
+  useEffect(() => {
+    if (article?.id) {
+      fetchFeedback();
+    }
+  }, [article?.id]);
 
   const fetchArticle = async () => {
     try {
@@ -67,6 +108,25 @@ export default function ArticleDetailPage() {
       setError('Network error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchFeedback = async () => {
+    if (!article?.id) return;
+    
+    setFeedbackLoading(true);
+    try {
+      const response = await fetch(`/api/classroom/feedback?articleId=${article.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setRealFeedback(data.data.feedback || []);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching feedback:', error);
+    } finally {
+      setFeedbackLoading(false);
     }
   };
 
@@ -103,6 +163,107 @@ export default function ArticleDetailPage() {
         console.log('Error copying to clipboard:', error);
       }
     }
+  };
+
+  const handleChecklistChange = (key: keyof typeof checklist) => {
+    setChecklist(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
+
+  const handleFeedbackSubmit = async () => {
+    if (!session || session.user.userType !== 'student') {
+      alert('Hanya siswa yang sudah login yang dapat memberikan feedback!');
+      return;
+    }
+
+    if (!rating || !feedback.trim()) {
+      alert('Mohon berikan rating dan saran improvement!');
+      return;
+    }
+
+    setSubmittingFeedback(true);
+    try {
+      const response = await fetch('/api/classroom/feedback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          articleId: article?.id,
+          rating,
+          comment: feedback,
+          challenge,
+          checklist
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        alert(data.data.message || 'Terima kasih atas feedback Anda! 🎉');
+        setFeedbackSubmitted(true);
+        setShowFeedback(false);
+        setRating(0);
+        setFeedback('');
+        setChallenge('');
+        // Refresh feedback list
+        fetchFeedback();
+      } else {
+        alert(data.error || 'Gagal mengirim feedback. Silakan coba lagi.');
+      }
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+      alert('Terjadi kesalahan. Silakan coba lagi.');
+    } finally {
+      setSubmittingFeedback(false);
+    }
+  };
+
+  // Sample next tutorial data
+  const getNextTutorial = () => {
+    const tutorials = [
+      {
+        id: 4,
+        title: "JavaScript Interactivity",
+        description: "Tambahkan filter, search, dan animasi ke galeri kamu",
+        icon: <Zap className="w-6 h-6 text-yellow-500" />
+      },
+      {
+        id: 5,  
+        title: "Database Integration",
+        description: "Simpan dan kelola data galeri dengan database",
+        icon: <FolderOpen className="w-6 h-6 text-green-500" />
+      },
+      {
+        id: 6,
+        title: "Portfolio Optimization",
+        description: "Optimasi performa dan SEO untuk portfolio profesional",
+        icon: <Award className="w-6 h-6 text-purple-500" />
+      }
+    ];
+    
+    return tutorials[Math.floor(Math.random() * tutorials.length)];
+  };
+
+  // Get display name and initial for feedback
+  const getStudentDisplay = (studentName: string, studentClass: string) => {
+    const initial = studentName.charAt(0).toUpperCase();
+    const displayName = studentClass ? `${studentName} - ${studentClass}` : studentName;
+    return { initial, displayName };
+  };
+
+  // Get background color for feedback cards
+  const getFeedbackBgColor = (index: number) => {
+    const colors = [
+      "bg-green-100 text-green-800",
+      "bg-blue-100 text-blue-800", 
+      "bg-purple-100 text-purple-800",
+      "bg-orange-100 text-orange-800",
+      "bg-pink-100 text-pink-800"
+    ];
+    return colors[index % colors.length];
   };
 
   if (loading) {
@@ -250,18 +411,326 @@ export default function ArticleDetailPage() {
               </div>
             )}
 
-            {/* Back to Articles */}
-            <div className="mt-8 pt-6 border-t">
-              <Link
-                href="/classroom"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-              >
-                <BookOpen className="w-4 h-4" />
-                Kembali ke Classroom
-              </Link>
+          </div>
+        </motion.div>
+
+        {/* Next Learning Path */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mt-8 bg-white rounded-lg shadow-md p-6"
+        >
+          <div className="flex items-center gap-3 mb-4">
+            <Sparkles className="w-6 h-6 text-pink-500" />
+            <h2 className="text-xl font-bold text-gray-800">Next Learning Path</h2>
+          </div>
+          
+          {(() => {
+            const nextTutorial = getNextTutorial();
+            return (
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-100">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-3">
+                    {nextTutorial.icon}
+                    <div>
+                      <h3 className="font-semibold text-gray-800 mb-1">{nextTutorial.title}</h3>
+                      <p className="text-gray-600 text-sm">{nextTutorial.description}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-sm text-gray-500">Coming Next</span>
+                    <div className="text-lg font-bold text-blue-600">Tutorial #{nextTutorial.id}</div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+        </motion.div>
+
+        {/* User Testing & Feedback */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="mt-8 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg shadow-md p-6 border border-yellow-200"
+        >
+          <div className="flex items-center gap-3 mb-6">
+            <Users className="w-6 h-6 text-purple-600" />
+            <h2 className="text-xl font-bold text-gray-800">User Testing & Feedback</h2>
+          </div>
+          
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Testing Checklist */}
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <CheckSquare className="w-5 h-5 text-orange-600" />
+                <h3 className="font-semibold text-gray-800">Testing Checklist</h3>
+              </div>
+              
+              <div className="space-y-3">
+                {[
+                  { key: 'responsive', label: 'Gallery responsive di mobile & desktop' },
+                  { key: 'lightbox', label: 'Lightbox berfungsi dengan smooth' },
+                  { key: 'performance', label: 'Loading time < 3 detik untuk 20 gambar' },
+                  { key: 'hover', label: 'Hover effects terasa natural' },
+                  { key: 'navigation', label: 'Navigasi keyboard accessible' }
+                ].map((item) => (
+                  <label key={item.key} className="flex items-center gap-3 cursor-pointer hover:bg-white hover:bg-opacity-50 p-2 rounded transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={checklist[item.key as keyof typeof checklist]}
+                      onChange={() => handleChecklistChange(item.key as keyof typeof checklist)}
+                      className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                    />
+                    <span className="text-sm text-gray-700">{item.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Feedback Collection */}
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <MessageCircle className="w-5 h-5 text-orange-600" />
+                <h3 className="font-semibold text-gray-800">Feedback Collection</h3>
+              </div>
+              
+              {/* Check if user is logged in as student */}
+              {status === 'loading' ? (
+                <div className="text-center py-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-600 mx-auto mb-2"></div>
+                  <p className="text-sm text-gray-600">Checking login status...</p>
+                </div>
+              ) : !session || session.user.userType !== 'student' ? (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+                  <LogIn className="w-8 h-8 text-blue-600 mx-auto mb-3" />
+                  <h4 className="font-semibold text-blue-800 mb-2">Login Diperlukan</h4>
+                  <p className="text-sm text-blue-700 mb-4">
+                    Hanya siswa yang sudah login yang dapat memberikan feedback
+                  </p>
+                  <Link
+                    href={`/student/login?callbackUrl=${encodeURIComponent(`/classroom/articles/${slug}`)}`}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                  >
+                    <LogIn className="w-4 h-4" />
+                    Login Siswa
+                  </Link>
+                </div>
+              ) : feedbackSubmitted ? (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                  <div className="text-2xl mb-2">✅</div>
+                  <h4 className="font-semibold text-green-800">Feedback Terkirim!</h4>
+                  <p className="text-sm text-green-700">Terima kasih atas partisipasi Anda</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Rating */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Rate tutorial ini (1-5 ⭐)
+                    </label>
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          onClick={() => setRating(star)}
+                          className={`text-2xl transition-colors ${
+                            star <= rating ? 'text-yellow-400' : 'text-gray-300 hover:text-yellow-200'
+                          }`}
+                        >
+                          ⭐
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Challenge */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Bagian mana yang paling challenging?
+                    </label>
+                    <select
+                      value={challenge}
+                      onChange={(e) => setChallenge(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+                      title="Pilih bagian yang paling challenging"
+                    >
+                      <option value="">Pilih bagian...</option>
+                      <option value="CSS Grid setup">CSS Grid setup</option>
+                      <option value="Lightbox implementation">Lightbox implementation</option>
+                      <option value="Responsive design">Responsive design</option>
+                      <option value="Image optimization">Image optimization</option>
+                      <option value="JavaScript functionality">JavaScript functionality</option>
+                    </select>
+                  </div>
+
+                  {/* Improvement Suggestions */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Saran improvement
+                    </label>
+                    <textarea
+                      value={feedback}
+                      onChange={(e) => setFeedback(e.target.value)}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+                      placeholder="Bagaimana tutorial ini bisa lebih baik?"
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleFeedbackSubmit}
+                    disabled={submittingFeedback || !rating || !feedback.trim()}
+                    className="w-full px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {submittingFeedback ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        Mengirim...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" />
+                        Submit Feedback
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </motion.div>
+
+        {/* Live Feedback dari Siswa GEMA */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="mt-8 bg-white rounded-lg shadow-md p-6"
+        >
+          <div className="flex items-center gap-3 mb-6">
+            <div className="bg-gradient-to-r from-blue-500 to-green-500 text-white p-2 rounded-lg">
+              📊
+            </div>
+            <h2 className="text-xl font-bold text-gray-800">Live Feedback dari Siswa GEMA</h2>
+          </div>
+          
+          <div className="space-y-4">
+            {feedbackLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading feedback...</p>
+              </div>
+            ) : realFeedback.length > 0 ? (
+              realFeedback.map((feedbackItem, index) => {
+                const { initial, displayName } = getStudentDisplay(feedbackItem.studentName, feedbackItem.studentClass);
+                const bgColor = getFeedbackBgColor(index);
+                
+                return (
+                  <div key={feedbackItem.id} className={`${bgColor} rounded-lg p-4 border-l-4 border-current`}>
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center font-bold text-sm">
+                        {initial}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-semibold">{displayName}</h4>
+                          <div className="flex items-center gap-1">
+                            {[...Array(feedbackItem.rating)].map((_, i) => (
+                              <Star key={i} className="w-4 h-4 text-yellow-500 fill-current" />
+                            ))}
+                            <span className="text-xs ml-2 opacity-75">{feedbackItem.timeAgo}</span>
+                          </div>
+                        </div>
+                        {feedbackItem.comment && (
+                          <p className="text-sm leading-relaxed">"{feedbackItem.comment}"</p>
+                        )}
+                        {feedbackItem.challenge && (
+                          <p className="text-xs mt-2 opacity-75">
+                            <strong>Challenging part:</strong> {feedbackItem.challenge}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <MessageCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p className="text-lg font-medium mb-2">Belum ada feedback</p>
+                <p className="text-sm">Jadilah yang pertama memberikan feedback untuk artikel ini!</p>
+              </div>
+            )}
+          </div>
+        </motion.div>
+
+        {/* Action Buttons */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="mt-8 bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 rounded-lg shadow-md p-6 border border-blue-100"
+        >
+          <div className="text-center mb-6">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Sparkles className="w-6 h-6 text-yellow-500" />
+              <div className="text-2xl">🎉</div>
+            </div>
+            <h2 className="text-xl font-bold text-gray-800 mb-2">Mantap! Galerimu sudah responsif, cepat, dan kece!</h2>
+            <p className="text-gray-600">Sekarang waktunya terapkan di project nyata dan dapatkan feedback dari teman-teman!</p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-4">
+            <Link
+              href="/classroom/projects/gallery-builder"
+              className="group bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg p-4 text-center hover:from-blue-700 hover:to-blue-800 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+            >
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <ExternalLink className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                <span className="text-lg">🔨</span>
+              </div>
+              <div className="font-semibold">Mulai Bangun Gallery</div>
+              <div className="text-sm opacity-90">Project Builder Tool</div>
+            </Link>
+
+            <Link
+              href="/classroom/assignments/responsive-gallery"
+              className="group bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg p-4 text-center hover:from-green-700 hover:to-green-800 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+            >
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <BookOpen className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                <span className="text-lg">📋</span>
+              </div>
+              <div className="font-semibold">Lihat Assignment</div>
+              <div className="text-sm opacity-90">Tugas & Checklist</div>
+            </Link>
+
+            <Link
+              href="/student/portfolio/submit"
+              className="group bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg p-4 text-center hover:from-purple-700 hover:to-pink-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+            >
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Award className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                <span className="text-lg">💎</span>
+              </div>
+              <div className="font-semibold">Submit ke Portfolio</div>
+              <div className="text-sm opacity-90">Showcase Your Work</div>
+            </Link>
+          </div>
+        </motion.div>
+
+        {/* Back to Articles */}
+        <div className="mt-8 text-center">
+          <Link
+            href="/classroom"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
+          >
+            <BookOpen className="w-4 h-4" />
+            Kembali ke Classroom
+          </Link>
+        </div>
       </article>
     </div>
   );
