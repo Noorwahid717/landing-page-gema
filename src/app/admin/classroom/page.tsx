@@ -74,18 +74,6 @@ export default function AdminClassroomPage() {
     fetchProjects();
   }, []);
 
-  useEffect(() => {
-    if (activeSection === 'assignments') {
-      setShowProjectForm(false);
-      setEditingProject(null);
-      resetProjectForm();
-    } else {
-      setShowCreateForm(false);
-      setEditingAssignment(null);
-      setSelectedAssignment(null);
-    }
-  }, [activeSection, resetProjectForm]);
-
   const fetchAssignments = async () => {
     try {
       const response = await fetch('/api/classroom/assignments');
@@ -187,6 +175,18 @@ export default function AdminClassroomPage() {
     });
     setEditingProject(null);
   }, [projects.length]);
+
+  useEffect(() => {
+    if (activeSection === 'assignments') {
+      setShowProjectForm(false);
+      setEditingProject(null);
+      resetProjectForm();
+    } else {
+      setShowCreateForm(false);
+      setEditingAssignment(null);
+      setSelectedAssignment(null);
+    }
+  }, [activeSection, resetProjectForm]);
 
   const handleProjectFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
