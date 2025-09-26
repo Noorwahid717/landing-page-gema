@@ -36,3 +36,18 @@ export interface ClassroomSubmissionResponse {
 export interface AssignmentWithSubmissions extends ClassroomAssignmentResponse {
   submissions: ClassroomSubmissionResponse[]
 }
+
+export interface ClassroomProjectChecklistItem {
+  id: string
+  title: string
+  slug: string
+  goal: string
+  skills: string[]
+  basicTargets: string[]
+  advancedTargets: string[]
+  reflectionPrompt?: string | null
+  order: number
+  isActive: boolean
+  createdAt?: string
+  updatedAt?: string
+}
