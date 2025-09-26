@@ -151,9 +151,6 @@ export const authOptions: AuthOptions = {
       }
     }
   },
-  pages: {
-    signIn: '/admin/login'
-  },
   debug: process.env.NODE_ENV === 'development',
   callbacks: {
     async jwt({ token, user }) {
@@ -179,17 +176,17 @@ export const authOptions: AuthOptions = {
     async redirect({ url, baseUrl }) {
       console.log('NextAuth redirect - url:', url, 'baseUrl:', baseUrl)
       
-      // Redirect based on user type
-      if (url.includes('/admin/login') || url === baseUrl) {
-        const dashboardUrl = `${baseUrl}/admin/dashboard`
-        console.log('Redirecting to admin dashboard:', dashboardUrl)
-        return dashboardUrl
-      }
-      
+      // Handle direct login page access
       if (url.includes('/student/login')) {
         const studentDashboardUrl = `${baseUrl}/student/dashboard`
-        console.log('Redirecting to student dashboard:', studentDashboardUrl)
+        console.log('Redirecting from student login to dashboard:', studentDashboardUrl)
         return studentDashboardUrl
+      }
+      
+      if (url.includes('/admin/login') || url === baseUrl) {
+        const adminDashboardUrl = `${baseUrl}/admin/dashboard`
+        console.log('Redirecting from admin login to dashboard:', adminDashboardUrl)
+        return adminDashboardUrl
       }
       
       // If url starts with /, it's a relative path

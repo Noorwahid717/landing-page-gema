@@ -36,11 +36,12 @@ export default function StudentLoginPage() {
         type: 'info'
       })
       
-      // Use NextAuth signIn with student provider
+      // Use NextAuth signIn with student provider and correct callback URL
       const result = await signIn('student', {
         studentId,
         password,
-        redirect: false
+        redirect: false,
+        callbackUrl: '/student/dashboard'
       })
 
       console.log('Student login result:', result)
