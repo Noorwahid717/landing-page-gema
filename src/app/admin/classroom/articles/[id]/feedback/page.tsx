@@ -8,10 +8,8 @@ import {
   MessageCircle, 
   Star,
   User,
-  Clock,
   TrendingUp,
   BarChart3,
-  Calendar,
   Award
 } from "lucide-react";
 
@@ -24,12 +22,6 @@ interface FeedbackItem {
   studentName: string;
   studentClass: string;
   timeAgo: string;
-}
-
-interface FeedbackStats {
-  averageRating: number;
-  totalFeedback: number;
-  title: string;
 }
 
 interface Article {
@@ -47,7 +39,6 @@ export default function AdminArticleFeedbackPage() {
   
   const [article, setArticle] = useState<Article | null>(null);
   const [feedback, setFeedback] = useState<FeedbackItem[]>([]);
-  const [stats, setStats] = useState<FeedbackStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -74,7 +65,6 @@ export default function AdminArticleFeedbackPage() {
         const feedbackData = await feedbackResponse.json();
         if (feedbackData.success) {
           setFeedback(feedbackData.data.feedback || []);
-          setStats(feedbackData.data.stats);
         }
       }
     } catch (error) {
@@ -283,7 +273,7 @@ export default function AdminArticleFeedbackPage() {
                   <div className="text-center py-12">
                     <MessageCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                     <h4 className="text-lg font-medium text-gray-500 mb-2">No Feedback Yet</h4>
-                    <p className="text-gray-400">Students haven't provided feedback for this article.</p>
+                    <p className="text-gray-400">Students haven&apos;t provided feedback for this article.</p>
                   </div>
                 ) : (
                   <div className="space-y-6">
@@ -326,7 +316,7 @@ export default function AdminArticleFeedbackPage() {
 
                         {item.comment && (
                           <div className="mb-3">
-                            <p className="text-gray-700 leading-relaxed">"{item.comment}"</p>
+                            <p className="text-gray-700 leading-relaxed">&ldquo;{item.comment}&rdquo;</p>
                           </div>
                         )}
 

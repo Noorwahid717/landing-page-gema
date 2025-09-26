@@ -16,7 +16,6 @@ import {
   BookOpen,
   Newspaper,
   Zap,
-  ArrowRight,
   Users,
   CheckSquare,
   Star,
@@ -58,7 +57,6 @@ export default function ArticleDetailPage() {
   const [error, setError] = useState<string | null>(null);
   
   // Feedback State
-  const [showFeedback, setShowFeedback] = useState(false);
   const [rating, setRating] = useState(0);
   const [feedback, setFeedback] = useState('');
   const [challenge, setChallenge] = useState('');
@@ -66,7 +64,16 @@ export default function ArticleDetailPage() {
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
 
   // Real feedback data
-  const [realFeedback, setRealFeedback] = useState<any[]>([]);
+  const [realFeedback, setRealFeedback] = useState<{
+    id: string;
+    rating: number;
+    comment: string;
+    challenge: string;
+    timestamp: string;
+    studentName: string;
+    studentClass: string;
+    timeAgo: string;
+  }[]>([]);
   const [feedbackLoading, setFeedbackLoading] = useState(false);
   
   // Testing Checklist State
@@ -204,7 +211,6 @@ export default function ArticleDetailPage() {
       if (response.ok && data.success) {
         alert(data.data.message || 'Terima kasih atas feedback Anda! 🎉');
         setFeedbackSubmitted(true);
-        setShowFeedback(false);
         setRating(0);
         setFeedback('');
         setChallenge('');
@@ -644,7 +650,7 @@ export default function ArticleDetailPage() {
                           </div>
                         </div>
                         {feedbackItem.comment && (
-                          <p className="text-sm leading-relaxed">"{feedbackItem.comment}"</p>
+                          <p className="text-sm leading-relaxed">&ldquo;{feedbackItem.comment}&rdquo;</p>
                         )}
                         {feedbackItem.challenge && (
                           <p className="text-xs mt-2 opacity-75">

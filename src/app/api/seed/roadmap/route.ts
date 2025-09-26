@@ -318,11 +318,11 @@ export async function POST(request: Request) {
       SELECT COUNT(*) as count FROM roadmap_stages
     `;
     
-    if (Array.isArray(existingStages) && existingStages[0] && (existingStages[0] as any).count > 0) {
+    if (Array.isArray(existingStages) && existingStages[0] && (existingStages[0] as { count: number }).count > 0) {
       return NextResponse.json({
         success: true,
         message: 'Roadmap stages already exist',
-        count: (existingStages[0] as any).count
+        count: (existingStages[0] as { count: number }).count
       });
     }
 
