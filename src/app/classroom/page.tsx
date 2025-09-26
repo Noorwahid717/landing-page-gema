@@ -20,8 +20,8 @@ import {
   Tag,
   Eye,
   Search,
-  ClipboardList,
   ListChecks,
+  ClipboardList,
   Target,
   Sparkles,
   RefreshCw
@@ -55,9 +55,6 @@ interface ProjectProgressState {
   advanced: Record<string, boolean>;
   reflection: string;
 }
-
-
-
 
 const getTargetKey = (
   project: ClassroomProjectChecklistItem,
@@ -135,6 +132,7 @@ export default function ClassroomPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [roadmapStudentId, setRoadmapStudentId] = useState("");
   const [roadmapStudentName, setRoadmapStudentName] = useState("");
+
   const [projects, setProjects] = useState<ClassroomProjectChecklistItem[]>(DEFAULT_PROJECTS);
   const [projectsLoading, setProjectsLoading] = useState(true);
   const [projectLoadError, setProjectLoadError] = useState<string | null>(null);
