@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 import {
   BookOpen,
   Upload,
@@ -18,9 +19,21 @@ import {
   Newspaper,
   Tag,
   Eye,
-  Search
+  Search,
+  ClipboardList,
+  ListChecks,
+  Target,
+  Sparkles,
+  RefreshCw
 } from "lucide-react";
-import type { ClassroomAssignmentResponse } from "@/types/classroom";
+import type {
+  ClassroomAssignmentResponse,
+  ClassroomProjectChecklistItem
+} from "@/types/classroom";
+import {
+  DEFAULT_PROJECTS,
+  DEFAULT_REFLECTION_PROMPT
+} from "@/data/classroom-roadmap";
 
 interface Article {
   id: string;
@@ -37,8 +50,78 @@ interface Article {
   publishedAt: string;
 }
 
+interface ProjectProgressState {
+  basic: Record<string, boolean>;
+  advanced: Record<string, boolean>;
+  reflection: string;
+}
+
+
+
+
+const getTargetKey = (
+  project: ClassroomProjectChecklistItem,
+  type: 'basic' | 'advanced',
+  index: number
+) => `${project.id}-${type}-${index}`;
+
+const createEmptyProgress = (
+  projects: ClassroomProjectChecklistItem[]
+): Record<string, ProjectProgressState> => {
+  return projects.reduce<Record<string, ProjectProgressState>>((acc, project) => {
+    const basic = project.basicTargets.reduce<Record<string, boolean>>((map, _item, index) => {
+      map[getTargetKey(project, 'basic', index)] = false;
+      return map;
+    }, {});
+
+    const advanced = project.advancedTargets.reduce<Record<string, boolean>>((map, _item, index) => {
+      map[getTargetKey(project, 'advanced', index)] = false;
+      return map;
+    }, {});
+
+    acc[project.id] = {
+      basic,
+      advanced,
+      reflection: ''
+    };
+
+    return acc;
+  }, {});
+};
+
+const mergeProgressWithProjects = (
+  projects: ClassroomProjectChecklistItem[],
+  saved?: Record<string, ProjectProgressState>
+): Record<string, ProjectProgressState> => {
+  const base = createEmptyProgress(projects);
+
+  if (!saved) {
+    return base;
+  }
+
+  projects.forEach((project) => {
+    const baseProgress = base[project.id];
+    const savedProgress = saved[project.id];
+    if (!baseProgress || !savedProgress) return;
+
+    Object.keys(baseProgress.basic).forEach((key) => {
+      baseProgress.basic[key] = savedProgress.basic?.[key] ?? baseProgress.basic[key];
+    });
+
+    Object.keys(baseProgress.advanced).forEach((key) => {
+      baseProgress.advanced[key] = savedProgress.advanced?.[key] ?? baseProgress.advanced[key];
+    });
+
+    baseProgress.reflection = savedProgress.reflection ?? '';
+  });
+
+  return base;
+};
+
+const STORAGE_PREFIX = "gema-classroom-project-roadmap";
+
 export default function ClassroomPage() {
-  const [activeTab, setActiveTab] = useState<'assignments' | 'articles'>('assignments');
+  const [activeTab, setActiveTab] = useState<'assignments' | 'articles' | 'roadmap'>('assignments');
   const [assignments, setAssignments] = useState<ClassroomAssignmentResponse[]>([]);
   const [articles, setArticles] = useState<Article[]>([]);
   const [selectedAssignment, setSelectedAssignment] = useState<ClassroomAssignmentResponse | null>(null);
@@ -50,10 +133,19 @@ export default function ClassroomPage() {
   const [studentId, setStudentId] = useState("");
   const [studentEmail, setStudentEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [roadmapStudentId, setRoadmapStudentId] = useState("");
+  const [roadmapStudentName, setRoadmapStudentName] = useState("");
+  const [projects, setProjects] = useState<ClassroomProjectChecklistItem[]>(DEFAULT_PROJECTS);
+  const [projectsLoading, setProjectsLoading] = useState(true);
+  const [projectLoadError, setProjectLoadError] = useState<string | null>(null);
+  const [roadmapProgress, setRoadmapProgress] = useState<Record<string, ProjectProgressState>>(() =>
+    createEmptyProgress(DEFAULT_PROJECTS)
+  );
 
   useEffect(() => {
     fetchAssignments();
     fetchArticles();
+    fetchProjects();
   }, []);
 
   const fetchAssignments = async () => {
@@ -85,6 +177,103 @@ export default function ClassroomPage() {
       console.error('Error fetching articles:', error);
     }
   };
+
+  const fetchProjects = async () => {
+    try {
+      const response = await fetch('/api/classroom/projects');
+      if (!response.ok) {
+        throw new Error(`Failed to fetch projects: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const metaMessage =
+        data?.meta && typeof data.meta.message === 'string'
+          ? data.meta.message
+          : null;
+
+      if (data.success && Array.isArray(data.data)) {
+        const fetchedProjects = (data.data as ClassroomProjectChecklistItem[]).filter(
+          (project) => project.isActive !== false
+        );
+
+        if (fetchedProjects.length > 0) {
+          fetchedProjects.sort((a, b) => {
+            if (a.order !== b.order) {
+              return (a.order ?? 0) - (b.order ?? 0);
+            }
+            return a.title.localeCompare(b.title);
+          });
+
+          setProjects(fetchedProjects);
+          setProjectLoadError(metaMessage);
+        } else {
+          setProjects(DEFAULT_PROJECTS);
+          setProjectLoadError(
+            metaMessage ?? 'Belum ada checklist proyek aktif, menampilkan versi default.'
+          );
+        }
+      } else {
+        setProjects(DEFAULT_PROJECTS);
+        setProjectLoadError(
+          metaMessage ?? 'Gagal memuat checklist proyek dari server.'
+        );
+      }
+    } catch (error) {
+      console.error('Error fetching classroom projects:', error);
+      setProjects(DEFAULT_PROJECTS);
+      setProjectLoadError('Tidak dapat memuat checklist proyek terbaru. Menampilkan versi default.');
+    } finally {
+      setProjectsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const activeProjects = projects;
+    const baseProgress = createEmptyProgress(activeProjects);
+
+    if (!roadmapStudentId) {
+      setRoadmapProgress(baseProgress);
+      setRoadmapStudentName("");
+      return;
+    }
+
+    try {
+      const stored = localStorage.getItem(`${STORAGE_PREFIX}-${roadmapStudentId}`);
+      if (stored) {
+        const parsed = JSON.parse(stored) as {
+          studentName?: string;
+          progress?: Record<string, ProjectProgressState>;
+        };
+        setRoadmapProgress(mergeProgressWithProjects(activeProjects, parsed.progress));
+        setRoadmapStudentName(parsed.studentName ?? "");
+      } else {
+        setRoadmapProgress(baseProgress);
+      }
+    } catch (error) {
+      console.error('Failed to load roadmap progress', error);
+      setRoadmapProgress(baseProgress);
+    }
+  }, [roadmapStudentId, projects]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!roadmapStudentId) return;
+
+    const payload = {
+      studentId: roadmapStudentId,
+      studentName: roadmapStudentName,
+      progress: roadmapProgress,
+      updatedAt: new Date().toISOString()
+    };
+
+    try {
+      localStorage.setItem(`${STORAGE_PREFIX}-${roadmapStudentId}`, JSON.stringify(payload));
+    } catch (error) {
+      console.error('Failed to store roadmap progress', error);
+    }
+  }, [roadmapProgress, roadmapStudentId, roadmapStudentName]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -181,6 +370,58 @@ export default function ClassroomPage() {
     }
   };
 
+  const toggleProjectTarget = (projectId: string, type: 'basic' | 'advanced', key: string) => {
+    setRoadmapProgress((prev) => {
+      const project = prev[projectId];
+      if (!project) return prev;
+
+      const group = project[type];
+      if (!group || !(key in group)) return prev;
+
+      return {
+        ...prev,
+        [projectId]: {
+          ...project,
+          [type]: {
+            ...group,
+            [key]: !group[key]
+          }
+        }
+      };
+    });
+  };
+
+  const handleReflectionChange = (projectId: string, reflection: string) => {
+    setRoadmapProgress((prev) => {
+      const project = prev[projectId];
+      if (!project) return prev;
+      return {
+        ...prev,
+        [projectId]: {
+          ...project,
+          reflection
+        }
+      };
+    });
+  };
+
+  const handleResetProgress = () => {
+    if (!roadmapStudentId) {
+      alert('Masukkan ID siswa terlebih dahulu untuk mereset progress.');
+      return;
+    }
+
+    const confirmation = window.confirm('Yakin ingin mereset seluruh progress checklist siswa ini?');
+    if (!confirmation) return;
+
+    const emptyProgress = createEmptyProgress(projects);
+    setRoadmapProgress(emptyProgress);
+    setRoadmapStudentName("");
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(`${STORAGE_PREFIX}-${roadmapStudentId}`);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -240,12 +481,23 @@ export default function ClassroomPage() {
               <Newspaper className="w-4 h-4" />
               Artikel & Tutorial
             </button>
+            <button
+              onClick={() => setActiveTab('roadmap')}
+              className={`px-4 py-2 rounded-md font-medium transition-colors flex items-center gap-2 ${
+                activeTab === 'roadmap'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              <ListChecks className="w-4 h-4" />
+              Roadmap Proyek
+            </button>
           </div>
         </div>
       </div>
 
       <div className="container mx-auto px-6 py-8">
-        {activeTab === 'assignments' && !selectedAssignment ? (
+        {activeTab === 'assignments' && !selectedAssignment && (
           /* Assignment List */
           <div>
             <motion.div
@@ -271,14 +523,14 @@ export default function ClassroomPage() {
                     <Folder className="w-8 h-8 text-blue-600" />
                     <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(assignment.status)}`}>
                       {getStatusIcon(assignment.status)}
-                      {assignment.status === 'active' ? 'Aktif' : 
+                      {assignment.status === 'active' ? 'Aktif' :
                        assignment.status === 'closed' ? 'Ditutup' : 'Akan Datang'}
                     </span>
                   </div>
-                  
+
                   <h3 className="text-lg font-bold text-gray-800 mb-2">{assignment.title}</h3>
                   <p className="text-sm text-gray-600 mb-4 line-clamp-3">{assignment.description}</p>
-                  
+
                   <div className="space-y-2 text-sm text-gray-500">
                     <div className="flex items-center gap-2">
                       <BookOpen className="w-4 h-4" />
@@ -293,7 +545,7 @@ export default function ClassroomPage() {
                       <span>{assignment.submissionCount}/{assignment.maxSubmissions} Submisi</span>
                     </div>
                   </div>
-                  
+
                   <div className="mt-4 pt-4 border-t">
                     <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
                       <Upload className="w-4 h-4" />
@@ -304,7 +556,9 @@ export default function ClassroomPage() {
               ))}
             </div>
           </div>
-        ) : activeTab === 'articles' ? (
+        )}
+
+        {activeTab === 'articles' && (
           /* Articles List */
           <div>
             <motion.div
@@ -318,105 +572,52 @@ export default function ClassroomPage() {
 
             {/* Filters and Search */}
             <div className="mb-6 flex flex-col sm:flex-row gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <input
-                    type="text"
-                    placeholder="Cari artikel..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
-              <div className="flex gap-2 flex-wrap">
+              <div className="flex gap-3 overflow-auto">
                 {categories.map((category) => (
                   <button
                     key={category}
                     onClick={() => setSelectedCategory(category)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      selectedCategory === category
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${selectedCategory === category ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
                   >
-                    {category === 'all' ? 'Semua' : category.charAt(0).toUpperCase() + category.slice(1)}
+                    {category}
                   </button>
                 ))}
               </div>
+              <div className="relative flex-1 min-w-[240px]">
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Cari artikel..."
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <Search className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
+              </div>
             </div>
 
-            {/* Featured Articles */}
-            {filteredArticles.some(article => article.featured) && (
-              <div className="mb-8">
-                <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-blue-600" />
-                  Artikel Unggulan
-                </h3>
-                <div className="grid md:grid-cols-2 gap-6">
-                  {filteredArticles
-                    .filter(article => article.featured)
-                    .map((article, index) => (
-                    <motion.div
-                      key={article.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden cursor-pointer"
-                      onClick={() => window.open(`/classroom/articles/${article.slug}`, '_blank')}
-                    >
-                      {article.imageUrl && (
-                        <div className="h-48 bg-gradient-to-r from-blue-500 to-purple-600"></div>
-                      )}
-                      <div className="p-6">
-                        <div className="flex items-center gap-3 mb-3">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(article.category)}`}>
-                            {article.category}
-                          </span>
-                          <div className="flex items-center gap-1 text-sm text-gray-500">
-                            <Clock className="w-4 h-4" />
-                            <span>{article.readTime} min</span>
-                          </div>
-                          <div className="flex items-center gap-1 text-sm text-gray-500">
-                            <Eye className="w-4 h-4" />
-                            <span>{article.views}</span>
-                          </div>
-                        </div>
-                        <h3 className="text-xl font-bold text-gray-800 mb-2">{article.title}</h3>
-                        <p className="text-gray-600 mb-4 line-clamp-3">{article.excerpt}</p>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 text-sm text-gray-500">
-                            <User className="w-4 h-4" />
-                            <span>{article.author}</span>
-                          </div>
-                          <span className="text-sm text-gray-500">
-                            {new Date(article.publishedAt).toLocaleDateString('id-ID')}
-                          </span>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* All Articles */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredArticles
-                .filter(article => !article.featured)
-                .map((article, index) => (
+            {/* Article Grid */}
+            <div className="grid gap-6 md:grid-cols-2">
+              {filteredArticles.map((article, index) => (
                 <motion.div
                   key={article.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden cursor-pointer"
-                  onClick={() => window.open(`/classroom/articles/${article.slug}`, '_blank')}
+                  className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 hover:shadow-lg transition-shadow"
                 >
-                  <div className="p-6">
-                    <div className="flex items-center gap-3 mb-3">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(article.category)}`}>
+                  <div className="relative h-48">
+                    <Image
+                      src={article.imageUrl || '/images/default-article.jpg'}
+                      alt={article.title}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+
+                  <div className="p-6 space-y-4">
+                    <div className="flex items-center gap-4 text-xs font-medium text-gray-500">
+                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full ${getCategoryColor(article.category)}`}>
+                        <Tag className="w-3 h-3" />
                         {article.category}
                       </span>
                       <div className="flex items-center gap-1 text-sm text-gray-500">
@@ -439,13 +640,13 @@ export default function ClassroomPage() {
                         {new Date(article.publishedAt).toLocaleDateString('id-ID')}
                       </span>
                     </div>
-                    
+
                     {/* Tags */}
                     {(() => {
                       try {
                         const tags = typeof article.tags === 'string' ? JSON.parse(article.tags) : article.tags;
                         if (!Array.isArray(tags) || tags.length === 0) return null;
-                        
+
                         return (
                           <div className="mt-3 pt-3 border-t">
                             <div className="flex flex-wrap gap-1">
@@ -481,7 +682,227 @@ export default function ClassroomPage() {
               </div>
             )}
           </div>
-        ) : selectedAssignment ? (
+        )}
+
+        {activeTab === 'roadmap' && (
+          <div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-8"
+            >
+              <h2 className="text-3xl font-bold text-gray-800 mb-2 flex items-center gap-3">
+                <ClipboardList className="w-8 h-8 text-blue-600" />
+                Roadmap Web Development SMA
+              </h2>
+              <p className="text-gray-600">
+                Ikuti tahapan belajar dari dasar hingga mini proyek. Checklist dan refleksi tersimpan otomatis di perangkat ini berdasarkan ID siswa.
+              </p>
+            </motion.div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-6">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-blue-900 mb-2">
+                    ID Siswa
+                  </label>
+                  <input
+                    type="text"
+                    value={roadmapStudentId}
+                    onChange={(e) => setRoadmapStudentId(e.target.value.trim())}
+                    placeholder="Masukkan NIS atau ID siswa"
+                    className="w-full px-4 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-blue-900 mb-2">
+                    Nama Siswa (opsional)
+                  </label>
+                  <input
+                    type="text"
+                    value={roadmapStudentName}
+                    onChange={(e) => setRoadmapStudentName(e.target.value)}
+                    placeholder="Masukkan nama untuk catatan"
+                    className="w-full px-4 py-2 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+              <div className="mt-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between text-sm text-blue-900/80">
+                <div className="flex items-center gap-2">
+                  <Target className="w-4 h-4" />
+                  <span>Checklist akan otomatis tersimpan untuk ID siswa yang sama.</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleResetProgress}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-blue-300 text-blue-700 hover:bg-blue-100 transition-colors"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Reset Progress
+                </button>
+              </div>
+            </div>
+
+            {projectLoadError && (
+              <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                {projectLoadError}
+              </div>
+            )}
+
+            {projectsLoading ? (
+              <div className="rounded-xl border border-blue-100 bg-white p-6 text-center text-sm text-blue-700">
+                Memuat checklist proyek...
+              </div>
+            ) : projects.length === 0 ? (
+              <div className="rounded-xl border border-gray-200 bg-white p-8 text-center text-sm text-gray-600">
+                Belum ada checklist proyek yang tersedia.
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {projects.map((project, index) => {
+                  const fallbackProgress = createEmptyProgress([project])[project.id];
+                  const projectProgress = roadmapProgress[project.id] ?? fallbackProgress;
+
+                  const basicItems = project.basicTargets.map((target, targetIndex) => {
+                    const key = getTargetKey(project, 'basic', targetIndex);
+                    return {
+                      key,
+                      label: target,
+                      checked: projectProgress.basic?.[key] ?? false
+                    };
+                  });
+
+                  const advancedItems = project.advancedTargets.map((target, targetIndex) => {
+                    const key = getTargetKey(project, 'advanced', targetIndex);
+                    return {
+                      key,
+                      label: target,
+                      checked: projectProgress.advanced?.[key] ?? false
+                    };
+                  });
+
+                  const basicCompleted = basicItems.filter((item) => item.checked).length;
+                  const advancedCompleted = advancedItems.filter((item) => item.checked).length;
+
+                  return (
+                    <motion.div
+                      key={project.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden"
+                    >
+                      <div className="border-b border-gray-100 bg-gray-50 px-6 py-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                        <div>
+                          <h3 className="text-xl font-bold text-gray-800">{project.title}</h3>
+                          <p className="text-sm text-gray-600 flex items-center gap-2">
+                            <Target className="w-4 h-4 text-blue-600" />
+                            {project.goal}
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {project.skills.map((skill) => (
+                            <span
+                              key={skill}
+                              className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700"
+                            >
+                              <Sparkles className="w-3 h-3" />
+                              {skill}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="grid gap-6 p-6 lg:grid-cols-3">
+                        <div className="lg:col-span-2 space-y-4">
+                          <div className="rounded-lg border border-green-100 bg-green-50/60 p-4">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                              <div className="flex items-center gap-2 text-green-700 font-semibold">
+                                <BookOpenCheck className="w-4 h-4" />
+                                Target Dasar
+                              </div>
+                              <span className="text-xs font-medium text-green-700 bg-white/70 px-2 py-1 rounded-full">
+                                {basicCompleted}/{basicItems.length} selesai
+                              </span>
+                            </div>
+                            <ul className="mt-3 space-y-2">
+                              {basicItems.map((item) => (
+                                <li key={item.key} className="flex items-start gap-3">
+                                  <input
+                                    type="checkbox"
+                                    className="mt-1.5 h-4 w-4 rounded border-green-300 text-green-600 focus:ring-green-500"
+                                    checked={item.checked}
+                                    onChange={() => toggleProjectTarget(project.id, 'basic', item.key)}
+                                    disabled={!roadmapStudentId}
+                                  />
+                                  <span className="text-sm text-gray-700">{item.label}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+
+                          {advancedItems.length > 0 && (
+                            <div className="rounded-lg border border-purple-100 bg-purple-50/60 p-4">
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                <div className="flex items-center gap-2 text-purple-700 font-semibold">
+                                  <Folder className="w-4 h-4" />
+                                  Target Lanjutan
+                                </div>
+                                <span className="text-xs font-medium text-purple-700 bg-white/70 px-2 py-1 rounded-full">
+                                  {advancedCompleted}/{advancedItems.length} selesai
+                                </span>
+                              </div>
+                              <ul className="mt-3 space-y-2">
+                                {advancedItems.map((item) => (
+                                  <li key={item.key} className="flex items-start gap-3">
+                                    <input
+                                      type="checkbox"
+                                      className="mt-1.5 h-4 w-4 rounded border-purple-300 text-purple-600 focus:ring-purple-500"
+                                      checked={item.checked}
+                                      onChange={() => toggleProjectTarget(project.id, 'advanced', item.key)}
+                                      disabled={!roadmapStudentId}
+                                    />
+                                    <span className="text-sm text-gray-700">{item.label}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="space-y-4">
+                          <div className="rounded-lg border border-orange-100 bg-orange-50/60 p-4">
+                            <h4 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                              <FileText className="w-4 h-4 text-orange-500" />
+                              Catatan & Refleksi
+                            </h4>
+                            <p className="text-xs text-orange-700/80 mb-3">
+                              {project.reflectionPrompt ?? DEFAULT_REFLECTION_PROMPT}
+                            </p>
+                            <textarea
+                              value={projectProgress.reflection ?? ''}
+                              onChange={(e) => handleReflectionChange(project.id, e.target.value)}
+                              placeholder="Tuliskan pembelajaran, tantangan, atau ide pengembangan berikutnya..."
+                              className="w-full h-32 resize-none rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                              disabled={!roadmapStudentId}
+                            />
+                            {!roadmapStudentId && (
+                              <p className="mt-2 text-xs text-gray-500">
+                                Masukkan ID siswa untuk mulai menandai checklist dan menyimpan refleksi.
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'assignments' && selectedAssignment && (
           /* Submission Form */
           <motion.div
             initial={{ opacity: 0, x: 20 }}
@@ -627,7 +1048,8 @@ export default function ClassroomPage() {
               </form>
             </div>
           </motion.div>
-        ) : null}
+        )}
+
       </div>
     </div>
   );

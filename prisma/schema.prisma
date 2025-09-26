@@ -325,6 +325,23 @@ model PortfolioRubricScore {
   @@map("portfolio_rubric_scores")
 }
 
+model ClassroomProjectChecklist {
+  id               String   @id @default(cuid())
+  title            String
+  slug             String   @unique
+  goal             String
+  skills           Json
+  basicTargets     Json
+  advancedTargets  Json
+  reflectionPrompt String?
+  order            Int      @default(0)
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("classroom_project_checklists")
+}
+
 model Student {
   id           String    @id @default(cuid())
   studentId    String    @unique // NIS atau nomor identitas siswa
