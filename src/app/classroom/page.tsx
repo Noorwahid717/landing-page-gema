@@ -387,7 +387,7 @@ export default function ClassroomPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [roadmapStudentId, setRoadmapStudentId] = useState("");
   const [roadmapStudentName, setRoadmapStudentName] = useState("");
-  const [roadmapProgress, setRoadmapProgress] = useState<Record<string, RoadmapProgressState>>(createEmptyProgress);
+  const [roadmapProgress, setRoadmapProgress] = useState<Record<string, RoadmapProgressState>>(createEmptyProgress());
 
   useEffect(() => {
     fetchAssignments();
