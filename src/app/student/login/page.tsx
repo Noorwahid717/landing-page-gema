@@ -36,18 +36,26 @@ export default function StudentLoginPage() {
         type: 'info'
       })
       
-      // Use NextAuth signIn with student provider and correct callback URL
-      const result = await signIn('student', {
-        studentId,
-        password,
-        redirect: false,
-        callbackUrl: '/student/dashboard'
+      // First, validate credentials with our API
+      const response = await fetch('/api/auth/student-login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          studentId,
+          password,
+        }),
       })
 
-      console.log('Student login result:', result)
-      
-      if (result?.error) {
-        console.error('Student login failed:', result.error)
+      if (!response.ok) {
+        throw new Error('Login failed')
+      }
+
+      const authResult = await response.json()
+      console.log('Student auth result:', authResult)
+
+      if (!authResult.success) {
         setError('NIS atau password salah. Silakan periksa data Anda.')
         setToast({
           show: true,
@@ -56,38 +64,26 @@ export default function StudentLoginPage() {
         })
         setIsLoading(false)
         setLoadingMessage('')
-      } else if (result?.ok) {
-        console.log('Student login successful, redirecting to dashboard...')
-        setLoadingMessage('Login berhasil! Mengalihkan ke dashboard...')
-        setToast({
-          show: true,
-          message: '🎉 Selamat datang di GEMA! Mengalihkan ke dashboard...',
-          type: 'success'
-        })
-        
-        // Manual redirect to student dashboard
-        setTimeout(() => {
-          console.log('Redirecting to student dashboard...')
-          window.location.href = '/student/dashboard'
-        }, 1500)
-      } else {
-        console.error('Unexpected student login result:', result)
-        setError('Login gagal. Silakan coba lagi.')
-        setToast({
-          show: true,
-          message: 'Terjadi masalah saat login. Silakan coba lagi.',
-          type: 'warning'
-        })
-        setIsLoading(false)
-        setLoadingMessage('')
+        return
       }
+
+      // If validation successful, use NextAuth signIn with explicit redirect
+      const result = await signIn('student', {
+        studentId,
+        password,
+        redirect: true,
+        callbackUrl: '/student/dashboard'
+      })
+
+      // This should not execute if redirect: true works
+      console.log('Unexpected: signIn returned without redirect:', result)
       
     } catch (error) {
       console.error('Student login error:', error)
-      setError('Terjadi kesalahan saat login. Silakan coba lagi.')
+      setError('NIS atau password salah. Silakan periksa data Anda.')
       setToast({
         show: true,
-        message: 'Terjadi kesalahan sistem. Silakan coba lagi.',
+        message: 'Login gagal! Periksa NIS dan password Anda.',
         type: 'error'
       })
       setIsLoading(false)

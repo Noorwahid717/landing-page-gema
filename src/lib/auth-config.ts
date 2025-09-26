@@ -176,30 +176,21 @@ export const authOptions: AuthOptions = {
     async redirect({ url, baseUrl }) {
       console.log('NextAuth redirect - url:', url, 'baseUrl:', baseUrl)
       
-      // Handle direct login page access
-      if (url.includes('/student/login')) {
-        const studentDashboardUrl = `${baseUrl}/student/dashboard`
-        console.log('Redirecting from student login to dashboard:', studentDashboardUrl)
-        return studentDashboardUrl
-      }
-      
-      if (url.includes('/admin/login') || url === baseUrl) {
-        const adminDashboardUrl = `${baseUrl}/admin/dashboard`
-        console.log('Redirecting from admin login to dashboard:', adminDashboardUrl)
-        return adminDashboardUrl
-      }
-      
-      // If url starts with /, it's a relative path
-      if (url.startsWith('/')) {
-        return `${baseUrl}${url}`
-      }
-      
-      // If url has same origin, allow it
-      if (new URL(url).origin === baseUrl) {
+      // Always redirect to the provided callback URL if it's within our domain
+      if (url.startsWith(baseUrl)) {
+        console.log('Using provided callback URL:', url)
         return url
       }
       
-      // Default to homepage
+      // Handle relative paths
+      if (url.startsWith('/')) {
+        const fullUrl = `${baseUrl}${url}`
+        console.log('Converting relative URL to full URL:', fullUrl)
+        return fullUrl
+      }
+      
+      // For unknown or external URLs, redirect to homepage
+      console.log('Fallback to homepage for URL:', url)
       return baseUrl
     }
   }
