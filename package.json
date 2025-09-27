@@ -4,23 +4,24 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "prisma generate && next build",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "deploy": "vercel --prod",
     "deploy-preview": "vercel",
-    "postinstall": "prisma generate",
-    "db:generate": "prisma generate",
-    "db:push": "prisma db push",
-    "db:seed": "prisma db seed",
-    "db:seed-tutorials": "npx tsx prisma/seed-tutorial-articles.ts",
-    "db:update-first-tutorial": "npx tsx prisma/update-first-tutorial.ts",
-    "db:migrate": "bash migrate-to-postgres.sh",
+    "_comment_build_original": "prisma generate && next build",
+    "_comment_postinstall": "prisma generate",
+    "_comment_db:generate": "prisma generate",
+    "_comment_db:push": "prisma db push",
+    "_comment_db:seed": "prisma db seed",
+    "_comment_db:seed-tutorials": "npx tsx prisma/seed-tutorial-articles.ts",
+    "_comment_db:update-first-tutorial": "npx tsx prisma/update-first-tutorial.ts",
+    "_comment_db:migrate": "bash migrate-to-postgres.sh",
     "vercel:force-deploy": "vercel --prod --force",
     "vercel:build": "npm run build"
   },
-  "prisma": {
-    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
+  "_comment_prisma": {
+    "_comment_seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.7",
