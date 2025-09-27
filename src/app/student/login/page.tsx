@@ -28,9 +28,9 @@ function StudentLoginContent() {
     message: string;
     type: 'success' | 'error' | 'warning' | 'info';
   }>({ show: false, message: '', type: 'info' })
+
   const router = useRouter()
   const searchParams = useSearchParams()
-
   const callbackUrl = searchParams?.get('callbackUrl') || '/student/dashboard'
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -39,26 +39,22 @@ function StudentLoginContent() {
     setError('')
     setLoadingMessage('Memverifikasi data siswa...')
 
+    console.log('[StudentLogin] Submitting credentials for studentId:', studentId)
+
     try {
-      console.log('Attempting student login with ID:', studentId)
-      
       // Show loading feedback
       setToast({
         show: true,
         message: 'Memverifikasi data siswa...',
         type: 'info'
       })
-      
+
       // First, validate credentials with our API
+      console.log('[StudentLogin] Calling /api/auth/student-login')
       const response = await fetch('/api/auth/student-login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          studentId,
-          password,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentId, password }),
       })
 
       if (!response.ok) {
@@ -66,9 +62,10 @@ function StudentLoginContent() {
       }
 
       const authResult = await response.json()
-      console.log('Student auth result:', authResult)
+      console.log('[StudentLogin] API validation result:', authResult)
 
       if (!authResult.success) {
+        console.warn('[StudentLogin] API validation failed:', authResult)
         setError('NIS atau password salah. Silakan periksa data Anda.')
         setToast({
           show: true,
@@ -81,12 +78,15 @@ function StudentLoginContent() {
       }
 
       // If validation successful, use NextAuth signIn and handle redirect manually
+      console.log('[StudentLogin] Credentials validated, invoking NextAuth signIn')
       const result = await signIn('student', {
         studentId,
         password,
         redirect: false,
         callbackUrl,
       })
+
+      console.log('[StudentLogin] NextAuth signIn response:', result)
 
       if (result?.error) {
         console.error('NextAuth signIn error:', result.error)
@@ -108,15 +108,35 @@ function StudentLoginContent() {
           type: 'success'
         })
         setLoadingMessage('Mengalihkan ke dashboard...')
-        router.push(result.url ?? callbackUrl)
+
+        const targetUrl = result.url ?? callbackUrl
+        console.log('[StudentLogin] Navigation target after sign-in:', targetUrl)
+
+        if (!targetUrl) {
+          console.warn('[StudentLogin] No target URL detected, staying on the page for manual investigation')
+          setIsLoading(false)
+          setLoadingMessage('')
+          return
+        }
+
+        // Use full-page navigation for absolute URLs to guarantee cookie propagation
+        if (typeof window !== 'undefined' && /^https?:\/\//.test(targetUrl)) {
+          console.log('[StudentLogin] Using window.location.href for absolute redirect')
+          window.location.href = targetUrl
+          return
+        }
+
+        console.log('[StudentLogin] Using router.push for relative redirect')
+        router.push(targetUrl)
         return
       }
 
       // Fallback: if signIn succeeded without explicit result, navigate manually
+      console.log('[StudentLogin] signIn returned unexpected payload, defaulting to callbackUrl:', callbackUrl)
       router.push(callbackUrl)
 
     } catch (error) {
-      console.error('Student login error:', error)
+      console.error('[StudentLogin] Unexpected error:', error)
       setError('NIS atau password salah. Silakan periksa data Anda.')
       setToast({
         show: true,
@@ -128,6 +148,7 @@ function StudentLoginContent() {
       return
     }
 
+    console.log('[StudentLogin] Login handler finished without redirect')
     setIsLoading(false)
     setLoadingMessage('')
   }
