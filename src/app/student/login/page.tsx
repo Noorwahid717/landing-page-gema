@@ -28,9 +28,9 @@ function StudentLoginContent() {
     message: string;
     type: 'success' | 'error' | 'warning' | 'info';
   }>({ show: false, message: '', type: 'info' })
+
   const router = useRouter()
   const searchParams = useSearchParams()
-
   const callbackUrl = searchParams?.get('callbackUrl') || '/student/dashboard'
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -53,13 +53,8 @@ function StudentLoginContent() {
       console.log('[StudentLogin] Calling /api/auth/student-login')
       const response = await fetch('/api/auth/student-login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          studentId,
-          password,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentId, password }),
       })
 
       if (!response.ok) {
