@@ -1,13 +1,22 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { signIn } from 'next-auth/react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Eye, EyeOff, User, GraduationCap } from 'lucide-react'
 import { Toast } from '@/components/Toast'
 
 export default function StudentLoginPage() {
+  return (
+    <Suspense fallback={<StudentLoginFallback />}> 
+      <StudentLoginContent />
+    </Suspense>
+  )
+}
+
+function StudentLoginContent() {
   const [studentId, setStudentId] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -19,6 +28,10 @@ export default function StudentLoginPage() {
     message: string;
     type: 'success' | 'error' | 'warning' | 'info';
   }>({ show: false, message: '', type: 'info' })
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
+  const callbackUrl = searchParams?.get('callbackUrl') || '/student/dashboard'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -67,17 +80,41 @@ export default function StudentLoginPage() {
         return
       }
 
-      // If validation successful, use NextAuth signIn with explicit redirect
+      // If validation successful, use NextAuth signIn and handle redirect manually
       const result = await signIn('student', {
         studentId,
         password,
-        redirect: true,
-        callbackUrl: '/student/dashboard'
+        redirect: false,
+        callbackUrl,
       })
 
-      // This should not execute if redirect: true works
-      console.log('Unexpected: signIn returned without redirect:', result)
-      
+      if (result?.error) {
+        console.error('NextAuth signIn error:', result.error)
+        setError('NIS atau password salah. Silakan periksa data Anda.')
+        setToast({
+          show: true,
+          message: 'Login gagal! Periksa NIS dan password Anda.',
+          type: 'error'
+        })
+        setIsLoading(false)
+        setLoadingMessage('')
+        return
+      }
+
+      if (result?.ok) {
+        setToast({
+          show: true,
+          message: 'Login berhasil! Mengarahkan ke dashboard...',
+          type: 'success'
+        })
+        setLoadingMessage('Mengalihkan ke dashboard...')
+        router.push(result.url ?? callbackUrl)
+        return
+      }
+
+      // Fallback: if signIn succeeded without explicit result, navigate manually
+      router.push(callbackUrl)
+
     } catch (error) {
       console.error('Student login error:', error)
       setError('NIS atau password salah. Silakan periksa data Anda.')
@@ -88,7 +125,11 @@ export default function StudentLoginPage() {
       })
       setIsLoading(false)
       setLoadingMessage('')
+      return
     }
+
+    setIsLoading(false)
+    setLoadingMessage('')
   }
 
   return (
@@ -249,6 +290,18 @@ export default function StudentLoginPage() {
           >
             ← Kembali ke Beranda
           </Link>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function StudentLoginFallback() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-green-500 via-blue-600 to-purple-500 flex items-center justify-center p-4">
+      <div className="relative w-full max-w-md">
+        <div className="text-center text-white">
+          <p className="text-lg font-semibold">Memuat halaman login siswa...</p>
         </div>
       </div>
     </div>
