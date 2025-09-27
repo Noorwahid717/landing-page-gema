@@ -109,7 +109,8 @@ function StudentLoginContent() {
         })
         setLoadingMessage('Mengalihkan ke dashboard...')
 
-        const targetUrl = result.url ?? callbackUrl
+        const isAuthSignInPage = result.url?.includes('/api/auth/signin')
+        const targetUrl = (!isAuthSignInPage && result.url) ? result.url : callbackUrl
         console.log('[StudentLogin] Navigation target after sign-in:', targetUrl)
 
         if (!targetUrl) {
