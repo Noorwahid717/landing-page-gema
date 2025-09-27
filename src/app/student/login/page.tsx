@@ -1,13 +1,22 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { signIn } from 'next-auth/react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Eye, EyeOff, User, GraduationCap } from 'lucide-react'
 import { Toast } from '@/components/Toast'
 
 export default function StudentLoginPage() {
+  return (
+    <Suspense fallback={<StudentLoginFallback />}> 
+      <StudentLoginContent />
+    </Suspense>
+  )
+}
+
+function StudentLoginContent() {
   const [studentId, setStudentId] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -19,6 +28,10 @@ export default function StudentLoginPage() {
     message: string;
     type: 'success' | 'error' | 'warning' | 'info';
   }>({ show: false, message: '', type: 'info' })
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
+  const callbackUrl = searchParams?.get('callbackUrl') || '/student/dashboard'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -26,17 +39,18 @@ export default function StudentLoginPage() {
     setError('')
     setLoadingMessage('Memverifikasi data siswa...')
 
+    console.log('[StudentLogin] Submitting credentials for studentId:', studentId)
+
     try {
-      console.log('Attempting student login with ID:', studentId)
-      
       // Show loading feedback
       setToast({
         show: true,
         message: 'Memverifikasi data siswa...',
         type: 'info'
       })
-      
+
       // First, validate credentials with our API
+      console.log('[StudentLogin] Calling /api/auth/student-login')
       const response = await fetch('/api/auth/student-login', {
         method: 'POST',
         headers: {
@@ -53,9 +67,10 @@ export default function StudentLoginPage() {
       }
 
       const authResult = await response.json()
-      console.log('Student auth result:', authResult)
+      console.log('[StudentLogin] API validation result:', authResult)
 
       if (!authResult.success) {
+        console.warn('[StudentLogin] API validation failed:', authResult)
         setError('NIS atau password salah. Silakan periksa data Anda.')
         setToast({
           show: true,
@@ -67,19 +82,66 @@ export default function StudentLoginPage() {
         return
       }
 
-      // If validation successful, use NextAuth signIn with explicit redirect
+      // If validation successful, use NextAuth signIn and handle redirect manually
+      console.log('[StudentLogin] Credentials validated, invoking NextAuth signIn')
       const result = await signIn('student', {
         studentId,
         password,
-        redirect: true,
-        callbackUrl: '/student/dashboard'
+        redirect: false,
+        callbackUrl,
       })
 
-      // This should not execute if redirect: true works
-      console.log('Unexpected: signIn returned without redirect:', result)
-      
+      console.log('[StudentLogin] NextAuth signIn response:', result)
+
+      if (result?.error) {
+        console.error('NextAuth signIn error:', result.error)
+        setError('NIS atau password salah. Silakan periksa data Anda.')
+        setToast({
+          show: true,
+          message: 'Login gagal! Periksa NIS dan password Anda.',
+          type: 'error'
+        })
+        setIsLoading(false)
+        setLoadingMessage('')
+        return
+      }
+
+      if (result?.ok) {
+        setToast({
+          show: true,
+          message: 'Login berhasil! Mengarahkan ke dashboard...',
+          type: 'success'
+        })
+        setLoadingMessage('Mengalihkan ke dashboard...')
+
+        const targetUrl = result.url ?? callbackUrl
+        console.log('[StudentLogin] Navigation target after sign-in:', targetUrl)
+
+        if (!targetUrl) {
+          console.warn('[StudentLogin] No target URL detected, staying on the page for manual investigation')
+          setIsLoading(false)
+          setLoadingMessage('')
+          return
+        }
+
+        // Use full-page navigation for absolute URLs to guarantee cookie propagation
+        if (typeof window !== 'undefined' && /^https?:\/\//.test(targetUrl)) {
+          console.log('[StudentLogin] Using window.location.href for absolute redirect')
+          window.location.href = targetUrl
+          return
+        }
+
+        console.log('[StudentLogin] Using router.push for relative redirect')
+        router.push(targetUrl)
+        return
+      }
+
+      // Fallback: if signIn succeeded without explicit result, navigate manually
+      console.log('[StudentLogin] signIn returned unexpected payload, defaulting to callbackUrl:', callbackUrl)
+      router.push(callbackUrl)
+
     } catch (error) {
-      console.error('Student login error:', error)
+      console.error('[StudentLogin] Unexpected error:', error)
       setError('NIS atau password salah. Silakan periksa data Anda.')
       setToast({
         show: true,
@@ -88,7 +150,12 @@ export default function StudentLoginPage() {
       })
       setIsLoading(false)
       setLoadingMessage('')
+      return
     }
+
+    console.log('[StudentLogin] Login handler finished without redirect')
+    setIsLoading(false)
+    setLoadingMessage('')
   }
 
   return (
@@ -249,6 +316,18 @@ export default function StudentLoginPage() {
           >
             ← Kembali ke Beranda
           </Link>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function StudentLoginFallback() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-green-500 via-blue-600 to-purple-500 flex items-center justify-center p-4">
+      <div className="relative w-full max-w-md">
+        <div className="text-center text-white">
+          <p className="text-lg font-semibold">Memuat halaman login siswa...</p>
         </div>
       </div>
     </div>
