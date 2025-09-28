@@ -43,6 +43,9 @@ const resolveCookieDomain = () => {
 
 export const authOptions: AuthOptions = {
   adapter: PrismaAdapter(prisma),
+  pages: {
+    signIn: undefined, // Disable default signin page to prevent redirect to NextAuth page
+  },
   providers: [
     // Admin Login Provider
     CredentialsProvider({

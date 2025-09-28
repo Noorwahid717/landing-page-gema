@@ -6,6 +6,8 @@ export async function POST(request: NextRequest) {
   try {
     const { studentId, password } = await request.json()
 
+    console.log('Student login attempt:', { studentId, hasPassword: !!password })
+
     if (!studentId || !password) {
       return NextResponse.json(
         { success: false, error: 'Student ID and password are required' },
@@ -20,6 +22,8 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    console.log('Student found:', !!student, student ? { id: student.id, studentId: student.studentId, status: student.status } : null)
+
     if (!student) {
       return NextResponse.json(
         { success: false, error: 'Student not found' },
@@ -28,6 +32,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (student.status !== 'active') {
+      console.log('Student account not active:', student.status)
       return NextResponse.json(
         { success: false, error: 'Student account is not active' },
         { status: 401 }
@@ -36,6 +41,7 @@ export async function POST(request: NextRequest) {
 
     // Verify password
     const isPasswordValid = await verifyPassword(password, student.password)
+    console.log('Password validation:', isPasswordValid)
 
     if (!isPasswordValid) {
       return NextResponse.json(
@@ -49,6 +55,8 @@ export async function POST(request: NextRequest) {
       where: { id: student.id },
       data: { lastLoginAt: new Date() }
     })
+
+    console.log('Student login successful:', student.id)
 
     return NextResponse.json({
       success: true,
