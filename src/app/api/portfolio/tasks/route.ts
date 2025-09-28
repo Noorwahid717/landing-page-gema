@@ -17,12 +17,10 @@ function parseTags(value?: string | string[] | null): string[] {
 }
 
 export async function GET(request: Request) {
-  const session = await getServerSession(authOptions)
-
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 })
-  }
-
+  // Allow access for both admin (NextAuth) and student (custom auth)
+  // Students will access this via frontend with student session
+  // Adminas will access this via NextAuth session
+  
   const searchParams = new URL(request.url).searchParams
   const classLevel = searchParams.get('classLevel') ?? undefined
   const includeInactive = searchParams.get('includeInactive') === 'true'

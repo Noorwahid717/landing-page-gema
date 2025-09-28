@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { signIn } from 'next-auth/react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Eye, EyeOff, User, GraduationCap } from 'lucide-react'
 import { Toast } from '@/components/Toast'
+import { studentAuth } from '@/lib/student-auth'
 
 export default function StudentLoginPage() {
   const [studentId, setStudentId] = useState('')
@@ -19,6 +20,15 @@ export default function StudentLoginPage() {
     message: string;
     type: 'success' | 'error' | 'warning' | 'info';
   }>({ show: false, message: '', type: 'info' })
+
+  // Check if already logged in
+  useEffect(() => {
+    const existingSession = studentAuth.getSession()
+    if (existingSession) {
+      console.log('Student already logged in, redirecting to dashboard')
+      window.location.replace('/student/dashboard-simple')
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -67,8 +77,16 @@ export default function StudentLoginPage() {
         return
       }
 
-      // COMPLETELY BYPASS NextAuth - direct redirect after API validation
-      console.log('Student login successful, redirecting immediately...')
+      // Save student session locally
+      console.log('Student login successful, saving session...')
+      studentAuth.setSession({
+        id: authResult.student.id,
+        studentId: authResult.student.studentId || studentId,
+        fullName: authResult.student.fullName || authResult.student.name || 'Student',
+        class: authResult.student.class || authResult.student.className || 'Unknown',
+        email: authResult.student.email || ''
+      })
+
       setLoadingMessage('Login berhasil! Mengalihkan ke dashboard...')
       setToast({
         show: true,
@@ -76,9 +94,15 @@ export default function StudentLoginPage() {
         type: 'success'
       })
 
-      // Immediate redirect without any NextAuth involvement
-      console.log('Redirecting to student dashboard...')
-      window.location.replace(`/student/dashboard-simple?student=${encodeURIComponent(studentId)}`)
+      // Get redirect URL from query params or default to dashboard
+      const urlParams = new URLSearchParams(window.location.search)
+      const redirectTo = urlParams.get('redirect') || '/student/dashboard-simple'
+
+      // Redirect after short delay to show success message
+      setTimeout(() => {
+        console.log('Redirecting to:', redirectTo)
+        window.location.replace(redirectTo)
+      }, 1000)
       
     } catch (error) {
       console.error('Student login error:', error)

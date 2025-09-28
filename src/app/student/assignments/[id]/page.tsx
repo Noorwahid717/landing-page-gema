@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSession, signOut } from 'next-auth/react'
 import { useRouter, useParams } from 'next/navigation'
+import { studentAuth } from '@/lib/student-auth'
 import { motion } from 'framer-motion'
 import { 
   ArrowLeft,
@@ -40,7 +40,6 @@ interface Submission {
 }
 
 export default function StudentAssignmentDetail() {
-  const { data: session, status } = useSession()
   const router = useRouter()
   const params = useParams()
   const assignmentId = params.id as string
@@ -54,17 +53,23 @@ export default function StudentAssignmentDetail() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (status === 'loading') return
-
-    if (!session || session.user.userType !== 'student') {
-      router.push('/student/login')
+    const studentSession = studentAuth.getSession()
+    
+    if (!studentSession) {
+      router.push('/student/login?redirectTo=' + encodeURIComponent(`/student/assignments/${assignmentId}`))
       return
     }
 
     fetchAssignmentDetails()
-  }, [session, status, router, assignmentId])
+  }, [router, assignmentId])
 
   const fetchAssignmentDetails = async () => {
+    const studentSession = studentAuth.getSession()
+    if (!studentSession) {
+      router.push('/student/login')
+      return
+    }
+
     try {
       setLoading(true)
       
@@ -76,7 +81,7 @@ export default function StudentAssignmentDetail() {
       }
 
       // Fetch student submissions for this assignment
-      const submissionsResponse = await fetch(`/api/classroom/submissions?assignmentId=${assignmentId}&studentId=${session?.user.id}`)
+      const submissionsResponse = await fetch(`/api/classroom/submissions?assignmentId=${assignmentId}&studentId=${studentSession.studentId}`)
       if (submissionsResponse.ok) {
         const submissionsData = await submissionsResponse.json()
         setSubmissions(submissionsData.data || [])
@@ -106,6 +111,12 @@ export default function StudentAssignmentDetail() {
   const handleFileUpload = async () => {
     if (!selectedFile || !assignment) return
 
+    const studentSession = studentAuth.getSession()
+    if (!studentSession) {
+      router.push('/student/login')
+      return
+    }
+
     try {
       setUploading(true)
       setError('')
@@ -114,7 +125,7 @@ export default function StudentAssignmentDetail() {
       const formData = new FormData()
       formData.append('file', selectedFile)
       formData.append('assignmentId', assignment.id)
-      formData.append('studentId', session?.user.id || '')
+      formData.append('studentId', studentSession.studentId)
 
       const response = await fetch('/api/classroom/submissions', {
         method: 'POST',
@@ -174,14 +185,16 @@ export default function StudentAssignmentDetail() {
     )
   }
 
-  if (!session || !assignment) {
+  const studentSession = studentAuth.getSession()
+  
+  if (!studentSession || !assignment) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Tugas Tidak Ditemukan</h2>
           <p className="text-gray-600 mb-4">Tugas yang Anda cari tidak dapat ditemukan.</p>
           <button
-            onClick={() => router.push('/student/dashboard')}
+            onClick={() => router.push('/student/dashboard-simple')}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
           >
             Kembali ke Dashboard
@@ -215,13 +228,16 @@ export default function StudentAssignmentDetail() {
             
             <div className="flex items-center space-x-4">
               <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">{session.user.name}</p>
+                <p className="text-sm font-medium text-gray-900">{studentSession.fullName}</p>
                 <p className="text-xs text-gray-600">
-                  {session.user.studentId} • {session.user.class}
+                  {studentSession.studentId} • {studentSession.class}
                 </p>
               </div>
               <button
-                onClick={() => signOut({ callbackUrl: '/' })}
+                onClick={() => {
+                  studentAuth.clearSession()
+                  router.push('/')
+                }}
                 className="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-red-600 transition-colors"
               >
                 <LogOut className="w-4 h-4 mr-2" />

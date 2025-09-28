@@ -1,8 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { studentAuth } from '@/lib/student-auth'
 import JSZip from 'jszip'
 import {
   PortfolioArtifactType,
@@ -74,6 +74,28 @@ interface ApiResponse<T> {
 
 const DEFAULT_HTML = `<!-- Mulai tulis struktur halaman kamu di sini -->\n<section class="hero">\n  <h1>Halo, saya...</h1>\n</section>`
 
+const DEFAULT_CSS = `/* Mulai styling kamu di sini */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 20px;
+  background: #f5f5f5;
+}
+
+.hero {
+  text-align: center;
+  padding: 50px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.hero h1 {
+  color: #333;
+  font-size: 2.5em;
+  margin: 0;
+}`
+
 function toTagsString(tags: string[]): string {
   return tags.join(', ')
 }
@@ -92,7 +114,6 @@ function clampTextLength(value: string, label: string) {
 }
 
 export default function PortfolioSubmissionPage() {
-  const { data: session, status } = useSession()
   const router = useRouter()
 
   const [loading, setLoading] = useState(true)
@@ -105,7 +126,7 @@ export default function PortfolioSubmissionPage() {
   const [tagsInput, setTagsInput] = useState('')
 
   const [html, setHtml] = useState(DEFAULT_HTML)
-  const [css, setCss] = useState('')
+  const [css, setCss] = useState(DEFAULT_CSS)
   const [js, setJs] = useState('')
 
   const [mode, setMode] = useState<'editor' | 'upload'>('editor')
@@ -125,6 +146,18 @@ export default function PortfolioSubmissionPage() {
       submission.status === PortfolioSubmissionStatus.RETURNED
     )
   }, [submission])
+
+  // Check authentication
+  useEffect(() => {
+    const session = studentAuth.getSession()
+    if (!session) {
+      console.log('No student session found, redirecting to login')
+      const currentUrl = window.location.pathname + window.location.search
+      window.location.href = `/student/login?redirect=${encodeURIComponent(currentUrl)}`
+      return
+    }
+    console.log('Student session found for portfolio:', session.studentId)
+  }, [])
 
   const hydrateEditorFromSubmission = useCallback((data: PortfolioSubmission) => {
     setTitle(data.title)
@@ -165,11 +198,12 @@ export default function PortfolioSubmissionPage() {
           }
         } else {
           setSubmission(null)
-          setTitle(`${session?.user?.name ?? 'Portfolio Pribadi'}`)
+          const studentSession = studentAuth.getSession()
+          setTitle(`${studentSession?.fullName ?? 'Portfolio Pribadi'}`)
           setSummary('')
           setTagsInput('')
           setHtml(DEFAULT_HTML)
-          setCss('')
+          setCss(DEFAULT_CSS)
           setJs('')
           setPreviewDoc('')
           setMode('editor')
@@ -178,26 +212,25 @@ export default function PortfolioSubmissionPage() {
         console.error(err)
       }
     },
-    [hydrateEditorFromSubmission, session?.user?.name]
+    [hydrateEditorFromSubmission]
   )
 
   useEffect(() => {
-    if (status === 'loading') return
-    if (!session || session.user.userType !== 'student') {
-      router.push('/student/login')
+    const studentSession = studentAuth.getSession()
+    if (!studentSession) {
+      const currentUrl = window.location.pathname + window.location.search
+      router.push(`/student/login?redirect=${encodeURIComponent(currentUrl)}`)
       return
     }
 
-    const userSession = session
-
-    setClassLevel(userSession.user.class || '')
+    setClassLevel(studentSession.class || '')
 
     async function fetchData() {
       try {
         setLoading(true)
         const params = new URLSearchParams()
-        if (userSession.user.class) {
-          params.set('classLevel', userSession.user.class)
+        if (studentSession?.class) {
+          params.set('classLevel', studentSession.class)
         }
         const tasksResponse = await fetch(`/api/portfolio/tasks?${params.toString()}`)
         if (tasksResponse.ok) {
@@ -220,7 +253,15 @@ export default function PortfolioSubmissionPage() {
     }
 
     fetchData()
-  }, [status, session, router, fetchSubmission])
+  }, [router, fetchSubmission])
+
+  // Live preview update when HTML, CSS, or JS changes
+  useEffect(() => {
+    if (mode === 'editor') {
+      const preview = buildSandboxedPreview({ html, css, js })
+      setPreviewDoc(preview)
+    }
+  }, [html, css, js, mode])
 
   async function persistDraft(options: { silent?: boolean } = {}) {
     if (!selectedTask) {
@@ -654,14 +695,14 @@ export default function PortfolioSubmissionPage() {
                   type="button"
                   onClick={() => persistDraft()}
                   disabled={saving || uploading}
-                  className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:opacity-60"
+                  className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:opacity-60"
                 >
                   {saving ? 'Menyimpan...' : 'Simpan Draft'}
                 </button>
                 <button
                   type="button"
                   onClick={handlePreview}
-                  className="inline-flex items-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-700 border border-gray-300 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+                  className="inline-flex items-center gap-2 rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-700 border border-gray-300 shadow-sm hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
                 >
                   Pratinjau
                 </button>
@@ -669,7 +710,7 @@ export default function PortfolioSubmissionPage() {
                   type="button"
                   onClick={handleSubmit}
                   disabled={!canSubmit || submitting || uploading}
-                  className="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500 disabled:opacity-60"
+                  className="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500 disabled:opacity-60"
                 >
                   {submitting ? 'Mengirim...' : 'Kirim untuk Dinilai'}
                 </button>

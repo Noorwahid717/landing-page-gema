@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { studentAuth } from '@/lib/student-auth'
 import {
   BookOpen,
   Upload,
@@ -16,8 +17,6 @@ import {
   GraduationCap,
   Target,
   Sparkles,
-  ListChecks,
-  ClipboardList,
   User,
   ArrowLeft
 } from 'lucide-react'
@@ -199,71 +198,48 @@ export default function StudentDashboardPage() {
     }
   };
 
-  // Initialize student data
+  // Check authentication and load student data
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search)
-    const studentId = urlParams.get('student')
-    
-    if (!studentId) {
-      // Redirect to login if no student ID
-      window.location.href = '/student/login'
-      return
+    const checkAuthAndLoadData = async () => {
+      try {
+        // First, check if student is authenticated
+        const session = studentAuth.getSession()
+        
+        if (!session) {
+          console.log('No student session found, redirecting to login')
+          const currentUrl = window.location.pathname + window.location.search
+          window.location.href = `/student/login?redirect=${encodeURIComponent(currentUrl)}`
+          return
+        }
+        
+        console.log('Student session found:', session)
+        
+        // Set student data from session
+        const studentData = {
+          id: session.id,
+          studentId: session.studentId,
+          fullName: session.fullName,
+          class: session.class,
+          email: session.email
+        }
+        setStudent(studentData)
+        setRoadmapStudentId(studentData.studentId)
+        setRoadmapStudentName(studentData.fullName)
+        
+        // Fetch assignments and roadmap
+        fetchAssignments(studentData.studentId)
+        fetchRoadmapStages()
+        setLoading(false)
+        
+      } catch (error) {
+        console.error('Student auth error:', error)
+        // Redirect to login on any error
+        const currentUrl = window.location.pathname + window.location.search
+        window.location.href = `/student/login?redirect=${encodeURIComponent(currentUrl)}`
+      }
     }
     
-    // Fetch real student data from database using the studentId
-    fetch(`/api/auth/student-login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ studentId, password: 'validate-only', validateOnly: true })
-    })
-    .then(async (res) => {
-      if (res.ok) {
-        const data = await res.json()
-        if (data.success && data.student) {
-          const studentData = {
-            id: data.student.id,
-            studentId: data.student.studentId,
-            fullName: data.student.fullName,
-            class: data.student.class,
-            email: data.student.email
-          }
-          setStudent(studentData)
-          setRoadmapStudentId(studentData.studentId)
-          setRoadmapStudentName(studentData.fullName)
-          
-          // Fetch assignments and roadmap
-          fetchAssignments(studentData.studentId)
-          fetchRoadmapStages()
-        } else {
-          throw new Error('Student not found')
-        }
-      } else {
-        throw new Error('Failed to validate student')
-      }
-    })
-    .catch((error) => {
-      console.error('Student validation error:', error)
-      // Use fallback data if API fails
-      const fallbackStudent = {
-        id: studentId,
-        studentId: studentId,
-        fullName: studentId === '2024001' ? 'Ahmad Fahreza' : 
-                  studentId === '2024002' ? 'Siti Nurhaliza' : 
-                  studentId === '2024003' ? 'Muhammad Rizki' : 'Student ' + studentId,
-        class: studentId === '2024001' || studentId === '2024002' ? 'XI-A' : 'XI-B',
-        email: `${studentId}@student.smawahidiyah.edu`
-      }
-      setStudent(fallbackStudent)
-      setRoadmapStudentId(fallbackStudent.studentId)
-      setRoadmapStudentName(fallbackStudent.fullName)
-      
-      // Still fetch assignments and roadmap
-      fetchAssignments(fallbackStudent.studentId)
-      fetchRoadmapStages()
-    })
-    .finally(() => {
-      setLoading(false)
-    })
+    checkAuthAndLoadData()
   }, [])
 
   // Load progress from localStorage
@@ -405,6 +381,11 @@ export default function StudentDashboardPage() {
     if (roadmapStudentId) {
       localStorage.removeItem(`gema-roadmap-${roadmapStudentId}`)
     }
+    
+    // Clear student session
+    studentAuth.clearSession()
+    
+    // Redirect to login
     window.location.href = '/student/login'
   }
 
@@ -494,126 +475,319 @@ export default function StudentDashboardPage() {
 
         {/* Quick Actions */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {/* Classroom Card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
+            className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow cursor-pointer border border-gray-100"
+            onClick={() => setActiveTab('assignments')}
           >
-            <Link
-              href="/classroom"
-              className="bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow border border-gray-100 block group"
-            >
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors">
-                  <BookOpen className="w-6 h-6 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800">Classroom</h3>
-                  <p className="text-sm text-gray-600">Akses materi & tugas</p>
-                </div>
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <BookOpen className="w-6 h-6 text-blue-600" />
               </div>
-              <p className="text-gray-600 text-sm">
-                Belajar teknologi dengan tutorial interaktif dan sistem feedback real-time.
-              </p>
-            </Link>
+              <div>
+                <h3 className="font-semibold text-gray-900">Classroom</h3>
+                <p className="text-sm text-gray-600">Akses materi & tugas</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600">
+              Belajar teknologi dengan tutorial interaktif dan sistem feedback real-time
+            </p>
           </motion.div>
 
+          {/* Portfolio Card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
+            className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow cursor-pointer border border-gray-100"
+            onClick={() => window.location.href = '/student/portfolio'}
           >
-            <Link
-              href="/student/portfolio"
-              className="bg-white rounded-xl p-6 shadow-md hover:shadow-lg transition-shadow border border-gray-100 block group"
-            >
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors">
-                  <Target className="w-6 h-6 text-green-600" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800">Portfolio</h3>
-                  <p className="text-sm text-gray-600">Kelola proyek Anda</p>
-                </div>
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <Target className="w-6 h-6 text-green-600" />
               </div>
-              <p className="text-gray-600 text-sm">
-                Upload dan showcase hasil karya teknologi dan programming Anda.
-              </p>
-            </Link>
+              <div>
+                <h3 className="font-semibold text-gray-900">Portfolio</h3>
+                <p className="text-sm text-gray-600">Kelola proyek Anda</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600">
+              Upload dan showcase hasil karya teknologi dan programming Anda
+            </p>
           </motion.div>
 
+          {/* Progress Belajar Card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
+            className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow cursor-pointer border border-gray-100"
+            onClick={() => setActiveTab('roadmap')}
           >
-            <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <Calendar className="w-6 h-6 text-purple-600" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800">Progres Belajar</h3>
-                  <p className="text-sm text-gray-600">Status pembelajaran</p>
-                </div>
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                <GraduationCap className="w-6 h-6 text-purple-600" />
               </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Tutorial Selesai</span>
-                  <span className="font-medium text-green-600">3/5</span>
-                </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Progress Belajar</h3>
+                <p className="text-sm text-gray-600">Status pembelajaran</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="text-2xl font-bold text-purple-600">3/5</div>
+              <div className="flex-1">
+                <div className="text-sm text-gray-600 mb-1">Tutorial Selesai</div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-green-500 h-2 rounded-full w-3/5"></div>
+                  <div className="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full w-3/5"></div>
                 </div>
               </div>
             </div>
           </motion.div>
         </div>
 
-        {/* Recent Activity */}
+        {/* Aktivitas Terbaru Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="bg-white rounded-xl shadow-md border border-gray-100 p-6"
+          className="bg-white rounded-xl shadow-sm border border-gray-100 mb-8"
         >
-          <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
-            <Clock className="w-5 h-5 text-blue-600" />
-            Aktivitas Terbaru
-          </h3>
-          
-          <div className="space-y-4">
-            <div className="flex items-center gap-4 p-4 bg-green-50 rounded-lg border border-green-200">
-              <CheckCircle className="w-5 h-5 text-green-600" />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-800">
-                  Menyelesaikan tutorial &ldquo;HTML & CSS Dasar&rdquo;
-                </p>
-                <p className="text-xs text-gray-500">2 jam yang lalu</p>
-              </div>
+          <div className="p-6 border-b border-gray-100">
+            <div className="flex items-center gap-3">
+              <Clock className="w-5 h-5 text-blue-600" />
+              <h3 className="text-lg font-semibold text-gray-900">Aktivitas Terbaru</h3>
             </div>
-            
-            <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <FileText className="w-5 h-5 text-blue-600" />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-800">
-                  Memberikan feedback pada artikel &ldquo;JavaScript Functions&rdquo;
-                </p>
-                <p className="text-xs text-gray-500">1 hari yang lalu</p>
+          </div>
+          <div className="p-6">
+            <div className="space-y-4">
+              {/* Sample Recent Activities */}
+              <div className="flex items-start gap-4 p-4 bg-green-50 rounded-lg border border-green-100">
+                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <CheckCircle className="w-5 h-5 text-green-600" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-medium text-gray-900">Menyelesaikan tutorial &ldquo;HTML & CSS Dasar&rdquo;</h4>
+                  <p className="text-sm text-gray-600 mt-1">2 jam yang lalu</p>
+                </div>
               </div>
-            </div>
-            
-            <div className="flex items-center gap-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
-              <Target className="w-5 h-5 text-purple-600" />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-800">
-                  Memulai proyek portfolio website
-                </p>
-                <p className="text-xs text-gray-500">3 hari yang lalu</p>
+
+              <div className="flex items-start gap-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <FileText className="w-5 h-5 text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-medium text-gray-900">Memberikan feedback pada artikel &ldquo;JavaScript Functions&rdquo;</h4>
+                  <p className="text-sm text-gray-600 mt-1">1 hari yang lalu</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4 p-4 bg-purple-50 rounded-lg border border-purple-100">
+                <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Upload className="w-5 h-5 text-purple-600" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-medium text-gray-900">Memulai proyek portfolio website</h4>
+                  <p className="text-sm text-gray-600 mt-1">3 hari yang lalu</p>
+                </div>
               </div>
             </div>
           </div>
         </motion.div>
+
+        {/* Tab Navigation */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+          <div className="border-b border-gray-200">
+            <nav className="-mb-px flex">
+              <button
+                onClick={() => setActiveTab('assignments')}
+                className={`py-4 px-6 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === 'assignments'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <BookOpen className="w-4 h-4" />
+                  Assignments
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveTab('roadmap')}
+                className={`py-4 px-6 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === 'roadmap'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Target className="w-4 h-4" />
+                  Roadmap
+                </div>
+              </button>
+            </nav>
+          </div>
+
+          <div className="p-6">
+            {activeTab === 'assignments' && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Tutorial Assignments</h3>
+                {assignmentsLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Memuat assignments...</p>
+                  </div>
+                ) : assignments && assignments.length > 0 ? (
+                  <div className="space-y-4">
+                    {assignments.map((assignment) => (
+                      <motion.div
+                        key={assignment.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow"
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1">
+                            <h4 className="font-medium text-gray-900 mb-1">{assignment.title}</h4>
+                            <p className="text-sm text-gray-600 mb-2">{assignment.description}</p>
+                            <div className="flex items-center gap-4 text-xs text-gray-500">
+                              <span className="flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
+                                Due: {new Date(assignment.dueDate).toLocaleDateString('id-ID')}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <FileText className="w-3 h-3" />
+                                {assignment.subject}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2 py-1 text-xs rounded-full ${
+                              assignment.status === 'completed' 
+                                ? 'bg-green-100 text-green-800' 
+                                : assignment.status === 'in_progress'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-gray-100 text-gray-800'
+                            }`}>
+                              {assignment.status === 'completed' ? 'Selesai' : 
+                               assignment.status === 'in_progress' ? 'Berlangsung' : 'Belum Mulai'}
+                            </span>
+                            <Link
+                              href={`/student/assignments/${assignment.id}`}
+                              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                            >
+                              Lihat →
+                            </Link>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <BookOpen className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <p className="text-gray-600">Belum ada assignments tersedia</p>
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {activeTab === 'roadmap' && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Learning Roadmap</h3>
+                {roadmapStages && roadmapStages.length > 0 ? (
+                  <div className="space-y-6">
+                    {roadmapStages.map((stage, index) => (
+                      <motion.div
+                        key={stage.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className="border border-gray-200 rounded-lg p-6"
+                      >
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                              index === 0 ? 'bg-blue-500 text-white' :
+                              index === 1 ? 'bg-green-500 text-white' :
+                              index === 2 ? 'bg-yellow-500 text-white' :
+                              'bg-gray-300 text-gray-600'
+                            }`}>
+                              {index + 1}
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-gray-900">{stage.title}</h4>
+                              <p className="text-sm text-gray-600">{stage.description}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-sm font-medium text-gray-900">
+                              {getStageStats(stage.id).completed}/{getTotalItems(stage)}
+                            </div>
+                            <div className="text-xs text-gray-500">Items</div>
+                          </div>
+                        </div>
+
+                        {stage.activityGroups && stage.activityGroups.length > 0 && (
+                          <div className="space-y-4">
+                            {stage.activityGroups.map((group) => (
+                              <div key={group.id} className="bg-gray-50 rounded-lg p-4">
+                                <h5 className="font-medium text-gray-800 mb-3">{group.title}</h5>
+                                <div className="space-y-2">
+                                  {group.items.map((item) => {
+                                    const isCompleted = roadmapProgress[stage.id]?.groups?.[group.id]?.[item.id] || false;
+                                    return (
+                                      <div key={item.id} className="flex items-center gap-3">
+                                        <button
+                                          onClick={() => handleItemCheck(stage.id, group.id, item.id, !isCompleted)}
+                                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                                            isCompleted 
+                                              ? 'bg-green-500 border-green-500 text-white' 
+                                              : 'border-gray-300 hover:border-green-400'
+                                          }`}
+                                        >
+                                          {isCompleted && <CheckCircle className="w-3 h-3" />}
+                                        </button>
+                                        <span className={`text-sm ${
+                                          isCompleted ? 'text-gray-600 line-through' : 'text-gray-800'
+                                        }`}>
+                                          {item.text || item.label}
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Target className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <p className="text-gray-600">Roadmap pembelajaran akan tersedia segera</p>
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   )
