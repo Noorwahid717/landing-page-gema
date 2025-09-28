@@ -67,47 +67,18 @@ export default function StudentLoginPage() {
         return
       }
 
-      // If validation successful, use NextAuth signIn with manual redirect handling
-      const result = await signIn('student', {
-        studentId,
-        password,
-        redirect: false // Prevent automatic redirect to NextAuth signin page
+      // COMPLETELY BYPASS NextAuth - direct redirect after API validation
+      console.log('Student login successful, redirecting immediately...')
+      setLoadingMessage('Login berhasil! Mengalihkan ke dashboard...')
+      setToast({
+        show: true,
+        message: '🎉 Selamat datang di GEMA! Mengalihkan ke dashboard...',
+        type: 'success'
       })
 
-      console.log('Student signIn result:', result)
-
-      if (result?.error) {
-        console.error('NextAuth signIn failed:', result.error)
-        setError('Login gagal. Silakan coba lagi.')
-        setToast({
-          show: true,
-          message: 'Terjadi masalah saat login. Silakan coba lagi.',
-          type: 'error'
-        })
-        setIsLoading(false)
-        setLoadingMessage('')
-        return
-      }
-
-      if (result?.ok) {
-        console.log('Student login successful, redirecting to dashboard...')
-        setLoadingMessage('Login berhasil! Mengalihkan ke dashboard...')
-        setToast({
-          show: true,
-          message: '🎉 Selamat datang di GEMA! Mengalihkan ke dashboard...',
-          type: 'success'
-        })
-        
-        // Force redirect to student dashboard (works better in production)
-        setTimeout(() => {
-          window.location.href = '/student/dashboard'
-        }, 1000)
-      } else {
-        console.error('Unexpected signIn result:', result)
-        setError('Login gagal. Silakan coba lagi.')
-        setIsLoading(false)
-        setLoadingMessage('')
-      }
+      // Immediate redirect without any NextAuth involvement
+      console.log('Redirecting to student dashboard...')
+      window.location.replace(`/student/dashboard-simple?student=${encodeURIComponent(studentId)}`)
       
     } catch (error) {
       console.error('Student login error:', error)
