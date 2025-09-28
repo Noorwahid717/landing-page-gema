@@ -31,8 +31,11 @@ export default withAuth(
       console.log('Middleware - Admin access granted for role:', token.role)
     }
     
-    // Check if user is trying to access student routes (except login/register)
-    if (pathname.startsWith('/student') && pathname !== '/student/login' && pathname !== '/student/register') {
+    // Check if user is trying to access student routes (except login/register/dashboard-simple)
+    if (pathname.startsWith('/student') && 
+        pathname !== '/student/login' && 
+        pathname !== '/student/register' && 
+        pathname !== '/student/dashboard-simple') {
       
       // If no token, redirect to student login
       if (!token) {
@@ -70,8 +73,11 @@ export default withAuth(
         console.log('Middleware authorized callback - Path:', pathname)
         console.log('Middleware authorized callback - Token exists:', !!token)
         
-        // Always allow access to login and register pages
-        if (pathname === '/admin/login' || pathname === '/student/login' || pathname === '/student/register') {
+        // Always allow access to login, register pages, and dashboard-simple
+        if (pathname === '/admin/login' || 
+            pathname === '/student/login' || 
+            pathname === '/student/register' ||
+            pathname === '/student/dashboard-simple') {
           return true
         }
         
@@ -84,8 +90,8 @@ export default withAuth(
           return hasValidToken && hasValidRole && hasValidType
         }
         
-        // For student routes, require valid student token
-        if (pathname.startsWith('/student')) {
+        // For student routes (except dashboard-simple), require valid student token
+        if (pathname.startsWith('/student') && pathname !== '/student/dashboard-simple') {
           const hasValidToken = !!token
           const hasValidRole = token?.role === 'STUDENT'
           const hasValidType = token?.userType === 'student'
