@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Mail, Phone, MapPin, Clock, Send, CheckCircle, AlertCircle } from 'lucide-react'
-import Navbar from '@/components/Navbar'
+import Navbar from '@/components/layout/Navbar'
 
 interface ContactFormData {
   name: string

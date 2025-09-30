@@ -3,10 +3,10 @@
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import RegistrationForm from "@/components/RegistrationForm";
-import FloatingChat from "@/components/FloatingChat";
-import VideoLogo from "@/components/VideoLogo";
-import AnimatedLogoDemo from "@/components/AnimatedLogoDemo";
+import RegistrationForm from "@/components/forms/RegistrationForm";
+import FloatingChat from "@/components/chat/FloatingChat";
+import VideoLogo from "@/components/branding/VideoLogo";
+import AnimatedLogoDemo from "@/components/branding/AnimatedLogoDemo";
 import { 
   Code, 
   Rocket, 
