@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Eye, EyeOff, User, Mail, Phone, MapPin, Users, GraduationCap, BookOpen } from 'lucide-react'
-import { Toast } from '@/components/Toast'
+import { Toast } from '@/components/feedback/toast'
 
 export default function StudentRegisterPage() {
   const [formData, setFormData] = useState({

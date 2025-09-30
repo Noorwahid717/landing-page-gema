@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Bell, X, MessageSquare, Clock, User, MessageCircle } from 'lucide-react'
 import { useSSENotifications } from '@/hooks/useSSENotifications'
-import { useToast } from '@/components/ui/Toast'
+import { useToast } from '@/components/feedback/toast'
 
 export default function NotificationPanel() {
   const { notifications, isConnected, unreadCount, markAsRead, clearNotifications } = useSSENotifications()

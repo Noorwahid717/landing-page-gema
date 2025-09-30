@@ -1,11 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { signIn } from 'next-auth/react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Eye, EyeOff, User, GraduationCap } from 'lucide-react'
-import { Toast } from '@/components/Toast'
+import { Toast } from '@/components/feedback/toast'
 import { studentAuth } from '@/lib/student-auth'
 
 export default function StudentLoginPage() {

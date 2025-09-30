@@ -5,7 +5,7 @@ import { signIn } from 'next-auth/react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react'
-import Toast from '@/components/Toast'
+import { Toast } from '@/components/feedback/toast'
 
 export default function AdminLogin() {
   const [email, setEmail] = useState('')

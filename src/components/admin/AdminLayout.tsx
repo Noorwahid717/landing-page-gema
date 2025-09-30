@@ -21,7 +21,7 @@ import {
 } from 'lucide-react'
 import Image from 'next/image'
 import NotificationPanel from './NotificationPanel'
-import { ToastProvider } from '../ui/Toast'
+import { ToastProvider } from '@/components/feedback/toast'
 
 interface AdminLayoutProps {
   children: React.ReactNode
