@@ -503,6 +503,13 @@ export default function ClassroomPage() {
                 </div>
               </div>
             </div>
+            <Link
+              href="/student/profile"
+              className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+            >
+              <User className="w-4 h-4" />
+              Profile
+            </Link>
           </div>
 
           {/* Tab Navigation */}

@@ -28,8 +28,36 @@ interface AdminLayoutProps {
 }
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  // Authentication guard for admin routes
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Memuat...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (status === 'unauthenticated' || !session) {
+    // Redirect to admin login
+    if (typeof window !== 'undefined') {
+      window.location.href = '/admin/login'
+    }
+    return null
+  }
+
+  // Check if user is admin
+  if (session.user.userType !== 'admin') {
+    if (typeof window !== 'undefined') {
+      window.location.href = '/admin/login'
+    }
+    return null
+  }
 
   const navigation = [
     { name: 'Dashboard', href: '/admin/dashboard', icon: Home },
@@ -91,16 +119,25 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </nav>
           </div>
           <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
-            <div className="flex items-center">
+            <div className="flex items-center justify-between w-full">
               <div className="ml-3">
                 <p className="text-base font-medium text-gray-700">{session?.user?.name}</p>
-                <button
-                  onClick={handleSignOut}
-                  className="text-sm font-medium text-gray-500 hover:text-gray-700 flex items-center"
-                >
-                  <LogOut className="w-4 h-4 mr-1" />
-                  Keluar
-                </button>
+                <div className="flex items-center gap-4 mt-1">
+                  <a
+                    href="/admin/profile"
+                    className="text-sm font-medium text-gray-500 hover:text-gray-700 flex items-center"
+                  >
+                    <Settings className="w-4 h-4 mr-1" />
+                    Profile
+                  </a>
+                  <button
+                    onClick={handleSignOut}
+                    className="text-sm font-medium text-gray-500 hover:text-gray-700 flex items-center"
+                  >
+                    <LogOut className="w-4 h-4 mr-1" />
+                    Keluar
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -185,13 +222,22 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   <p className="text-sm font-medium text-gray-700">{session?.user?.name}</p>
                   <p className="text-xs text-gray-500">Administrator</p>
                 </div>
-                <button
-                  onClick={handleSignOut}
-                  className="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                  title="Keluar"
-                >
-                  <LogOut className="w-5 h-5" />
-                </button>
+                <div className="flex items-center gap-1">
+                  <a
+                    href="/admin/profile"
+                    className="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                    title="Profile"
+                  >
+                    <Settings className="w-5 h-5" />
+                  </a>
+                  <button
+                    onClick={handleSignOut}
+                    className="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                    title="Keluar"
+                  >
+                    <LogOut className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>

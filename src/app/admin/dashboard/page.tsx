@@ -12,7 +12,11 @@ import {
   Bell,
   TrendingUp,
   Eye,
-  BookOpen
+  BookOpen,
+  Clock,
+  Activity,
+  GraduationCap,
+  FileText
 } from 'lucide-react'
 import AdminLayout from '@/components/admin/AdminLayout'
 
@@ -22,6 +26,14 @@ interface DashboardStats {
   pendingRegistrations: number
   totalActivities: number
   unreadContacts: number
+  totalStudents: number
+  totalPortfolioSubmissions: number
+  totalAssignments: number
+  contactsChange: number
+  registrationsChange: number
+  contactsThisWeek: number
+  registrationsThisWeek: number
+  recentActivities: number
 }
 
 export default function AdminDashboard() {
@@ -31,7 +43,15 @@ export default function AdminDashboard() {
     totalRegistrations: 0,
     pendingRegistrations: 0,
     totalActivities: 0,
-    unreadContacts: 0
+    unreadContacts: 0,
+    totalStudents: 0,
+    totalPortfolioSubmissions: 0,
+    totalAssignments: 0,
+    contactsChange: 0,
+    registrationsChange: 0,
+    contactsThisWeek: 0,
+    registrationsThisWeek: 0,
+    recentActivities: 0
   })
   const [isLoading, setIsLoading] = useState(true)
 
@@ -63,32 +83,66 @@ export default function AdminDashboard() {
       value: stats.totalContacts,
       icon: MessageSquare,
       color: 'bg-blue-500',
-      change: '+12%',
-      changeType: 'increase'
+      change: stats.contactsChange > 0 ? `+${stats.contactsChange.toFixed(1)}%` : 
+             stats.contactsChange < 0 ? `${stats.contactsChange.toFixed(1)}%` : '0%',
+      changeType: stats.contactsChange >= 0 ? 'increase' : 'decrease'
     },
     {
-      title: 'Pendaftaran',
+      title: 'Total Pendaftaran',
       value: stats.totalRegistrations,
       icon: UserPlus,
       color: 'bg-green-500',
-      change: '+8%',
-      changeType: 'increase'
+      change: stats.registrationsChange > 0 ? `+${stats.registrationsChange.toFixed(1)}%` : 
+             stats.registrationsChange < 0 ? `${stats.registrationsChange.toFixed(1)}%` : '0%',
+      changeType: stats.registrationsChange >= 0 ? 'increase' : 'decrease'
     },
     {
-      title: 'Menunggu Approval',
+      title: 'Pending Registrasi',
       value: stats.pendingRegistrations,
-      icon: Users,
+      icon: Clock,
       color: 'bg-yellow-500',
-      change: '3 baru',
+      change: 'Perlu Review',
+      changeType: stats.pendingRegistrations > 5 ? 'warning' : 'neutral'
+    },
+    {
+      title: 'Total Siswa',
+      value: stats.totalStudents,
+      icon: GraduationCap,
+      color: 'bg-purple-500',
+      change: 'Aktif',
       changeType: 'neutral'
     },
     {
-      title: 'Kegiatan Aktif',
+      title: 'Total Aktivitas',
       value: stats.totalActivities,
-      icon: Calendar,
-      color: 'bg-purple-500',
-      change: '2 minggu ini',
+      icon: Activity,
+      color: 'bg-indigo-500',
+      change: `${stats.recentActivities} Minggu Ini`,
       changeType: 'neutral'
+    },
+    {
+      title: 'Portfolio Submissions',
+      value: stats.totalPortfolioSubmissions,
+      icon: FileText,
+      color: 'bg-teal-500',
+      change: 'Terkumpul',
+      changeType: 'neutral'
+    },
+    {
+      title: 'Total Assignments',
+      value: stats.totalAssignments,
+      icon: BookOpen,
+      color: 'bg-orange-500',
+      change: 'Tersedia',
+      changeType: 'neutral'
+    },
+    {
+      title: 'Pesan Belum Dibaca',
+      value: stats.unreadContacts,
+      icon: Bell,
+      color: stats.unreadContacts > 0 ? 'bg-red-500' : 'bg-green-500',
+      change: stats.unreadContacts > 0 ? 'Perlu Tindakan' : 'Semua Terbaca',
+      changeType: stats.unreadContacts > 0 ? 'warning' : 'success'
     }
   ]
 

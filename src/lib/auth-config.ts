@@ -44,7 +44,7 @@ const resolveCookieDomain = () => {
 export const authOptions: AuthOptions = {
   adapter: PrismaAdapter(prisma),
   pages: {
-    signIn: undefined, // Disable default signin page to prevent redirect to NextAuth page
+    signIn: '/admin/login', // Custom admin login page
   },
   providers: [
     // Admin Login Provider
@@ -190,6 +190,12 @@ export const authOptions: AuthOptions = {
         const fullUrl = `${baseUrl}${url}`
         console.log('Converting relative URL to full URL:', fullUrl)
         return fullUrl
+      }
+      
+      // Default redirect for admin after successful login
+      if (url === baseUrl) {
+        console.log('Default admin redirect to dashboard')
+        return `${baseUrl}/admin/dashboard`
       }
       
       // For unknown or external URLs, redirect to homepage

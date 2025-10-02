@@ -42,7 +42,8 @@ export default function AdminLogin() {
       const result = await signIn('admin', {
         email,
         password,
-        redirect: false
+        redirect: false,
+        callbackUrl: '/admin/dashboard'
       })
 
       console.log('Login result:', result)

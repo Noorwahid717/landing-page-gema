@@ -24,7 +24,11 @@ export default withAuth(
       
       // Check if user has admin role and is admin type
       if ((token.role !== 'SUPER_ADMIN' && token.role !== 'ADMIN') || token.userType !== 'admin') {
-        console.log('Middleware - Invalid admin access:', token.role, token.userType)
+        console.log('Middleware - Invalid admin access:')
+        console.log('  - Token role:', token.role)
+        console.log('  - Token userType:', token.userType)
+        console.log('  - Expected role: SUPER_ADMIN or ADMIN')
+        console.log('  - Expected userType: admin')
         return NextResponse.redirect(new URL('/admin/login', req.url))
       }
       

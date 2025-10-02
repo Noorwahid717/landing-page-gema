@@ -315,13 +315,22 @@ export default function ArticleDetailPage() {
               <ArrowLeft className="w-5 h-5" />
               Kembali ke Classroom
             </Link>
-            <button
-              onClick={handleShare}
-              className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-blue-600 transition-colors border border-gray-300 rounded-lg hover:border-blue-300"
-            >
-              <Share2 className="w-4 h-4" />
-              Share
-            </button>
+            <div className="flex items-center gap-3">
+              <Link
+                href="/student/profile"
+                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              >
+                <User className="w-4 h-4" />
+                Profile
+              </Link>
+              <button
+                onClick={handleShare}
+                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-blue-600 transition-colors border border-gray-300 rounded-lg hover:border-blue-300"
+              >
+                <Share2 className="w-4 h-4" />
+                Share
+              </button>
+            </div>
           </div>
         </div>
       </div>
