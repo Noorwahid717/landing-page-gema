@@ -1,5 +1,8 @@
 import type { NextRequest } from 'next/server'
 
+// Edge runtime is required for WebSocket support
+// Note: WebSocket only works in production (Vercel/Cloudflare)
+// For local development, consider using alternative signaling methods
 export const runtime = 'edge'
 
 type Role = 'host' | 'viewer'

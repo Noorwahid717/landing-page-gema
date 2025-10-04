@@ -104,14 +104,29 @@ export default function LiveClassroomPage() {
   const params = useParams<{ id: string }>()
   const classroomIdParam = Array.isArray(params?.id) ? params.id[0] : params?.id
   const roomId = classroomIdParam || ''
-  const { data: authSession } = useSession()
+  const { data: authSession, status: authStatus } = useSession()
   const [studentSession, setStudentSession] = useState<ReturnType<typeof studentAuth.getSession> | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    setStudentSession(studentAuth.getSession())
-  }, [])
+    const session = studentAuth.getSession()
+    setStudentSession(session)
+    setIsLoading(false)
+    
+    // Debug logging
+    console.log('🔐 Auth Debug:', {
+      authStatus,
+      authSessionFull: authSession,
+      authSessionUser: authSession?.user,
+      authSessionUserRole: authSession?.user?.role,
+      studentSession: session,
+      isAdmin: authSession?.user?.role === 'ADMIN' || authSession?.user?.role === 'SUPER_ADMIN',
+      cookies: document.cookie
+    })
+  }, [authSession, authStatus])
 
-  const isAdmin = authSession?.user?.role === 'ADMIN'
+  const isAdmin = authSession?.user?.role === 'ADMIN' || authSession?.user?.role === 'SUPER_ADMIN'
+  const isAuthenticated = isAdmin || !!studentSession
 
   if (!roomId) {
     return (
@@ -124,7 +139,20 @@ export default function LiveClassroomPage() {
     )
   }
 
-  if (!isAdmin && !studentSession) {
+  // Show loading while checking authentication
+  if (authStatus === 'loading' || isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center">
+        <div className="text-center space-y-2">
+          <Loader2 className="mx-auto h-12 w-12 animate-spin text-blue-500" />
+          <p className="text-lg font-semibold">Memeriksa autentikasi...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Check if user is authenticated
+  if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center px-6">
         <div className="max-w-md text-center space-y-4">
@@ -134,6 +162,20 @@ export default function LiveClassroomPage() {
             Siaran langsung hanya dapat diakses oleh guru (admin) dan siswa yang sudah masuk.
             Silakan login terlebih dahulu untuk melanjutkan.
           </p>
+          <div className="flex gap-3 justify-center mt-6">
+            <a
+              href="/admin/login"
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+            >
+              Login Admin
+            </a>
+            <a
+              href="/student/login"
+              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+            >
+              Login Siswa
+            </a>
+          </div>
         </div>
       </div>
     )
@@ -587,7 +629,19 @@ function LiveRoom({
       socket.onerror = (event) => {
         console.error('WebSocket error', event)
         setConnectionStatus('error')
-        setErrorMessage('Koneksi signaling mengalami masalah')
+        
+        // Check if running on localhost
+        const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        
+        if (isLocalhost) {
+          setErrorMessage('WebSocket tidak support di local development. Deploy ke Vercel untuk menggunakan Live Streaming.')
+          console.warn('⚠️ WebSocket Edge Runtime hanya bekerja di production (Vercel/Cloudflare)')
+          console.warn('📌 Untuk menggunakan Live Classroom, deploy aplikasi ke Vercel')
+          console.warn('📌 Command: vercel --prod')
+        } else {
+          setErrorMessage('Koneksi signaling mengalami masalah. Coba refresh halaman.')
+        }
+        
         reject(new Error('WebSocket error'))
       }
 
@@ -848,9 +902,34 @@ function LiveRoom({
         return 'bg-slate-700/40 text-slate-300 border border-slate-600/60'
     }
   }, [connectionStatus])
+  const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+
   return (
     <div className="min-h-screen bg-slate-950 text-white">
       <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-10">
+        {/* Local Development Warning */}
+        {isLocalhost && (
+          <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-amber-400 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-amber-300 mb-1">
+                  ⚠️ Mode Development - WebSocket Tidak Tersedia
+                </h3>
+                <p className="text-sm text-amber-200/90 mb-2">
+                  Live Streaming menggunakan WebSocket Edge Runtime yang <strong>hanya bekerja di production</strong> (Vercel/Cloudflare).
+                </p>
+                <p className="text-sm text-amber-200/90">
+                  Untuk menggunakan fitur Live Classroom secara penuh, deploy aplikasi ke Vercel:
+                </p>
+                <code className="block mt-2 px-3 py-1.5 bg-slate-900/50 rounded text-xs text-amber-300 border border-amber-500/20">
+                  vercel --prod
+                </code>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <div className="flex items-center gap-3 text-sm text-slate-300">

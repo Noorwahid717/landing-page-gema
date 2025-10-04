@@ -87,5 +87,6 @@ export default withAuth(
 )
 
 export const config = {
+  // Only protect admin routes, let /classroom handle its own auth
   matcher: ['/admin/:path*']
 }
