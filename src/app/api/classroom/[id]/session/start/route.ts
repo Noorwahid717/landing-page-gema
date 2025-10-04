@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 
 import { prisma } from '@/lib/prisma'
+import { ensureLiveSessionDelegate } from '@/lib/prisma-delegates'
 import { authOptions } from '@/lib/auth-config'
 
 export async function POST(request: NextRequest) {
@@ -35,7 +36,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Classroom not found' }, { status: 404 })
   }
 
-  const existingLiveSession = await prisma.liveSession.findFirst({
+  const liveSessionDelegate = ensureLiveSessionDelegate(prisma)
+
+  const existingLiveSession = await liveSessionDelegate.findFirst({
     where: {
       classroomId,
       status: 'live'
@@ -49,7 +52,7 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  const liveSession = await prisma.liveSession.create({
+  const liveSession = await liveSessionDelegate.create({
     data: {
       classroomId,
       status: 'live',
