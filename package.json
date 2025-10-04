@@ -10,6 +10,7 @@
     "test:e2e": "playwright test",
     "deploy": "vercel --prod",
     "deploy-preview": "vercel",
+    "prisma:generate": "prisma generate",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:seed": "prisma db seed",
@@ -18,7 +19,7 @@
     "db:update-first-tutorial": "npx tsx prisma/update-first-tutorial.ts",
     "db:migrate": "bash migrate-to-postgres.sh",
     "vercel:force-deploy": "vercel --prod --force",
-    "vercel:build": "npm run build"
+    "vercel:build": "npm run prisma:generate && npm run build"
   },
   
   "dependencies": {
