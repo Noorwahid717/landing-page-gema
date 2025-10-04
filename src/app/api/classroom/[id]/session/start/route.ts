@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 
 import { prisma } from '@/lib/prisma'
-import { ensureLiveSessionDelegate } from '@/lib/prisma-delegates'
+import { ensureClassroomDelegate, ensureLiveSessionDelegate } from '@/lib/prisma-delegates'
 import { authOptions } from '@/lib/auth-config'
 
 export async function POST(request: NextRequest) {
@@ -28,7 +28,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Classroom id is required' }, { status: 400 })
   }
 
-  const classroom = await prisma.classroom.findUnique({
+  const classroomDelegate = ensureClassroomDelegate(prisma)
+
+  const classroom = await classroomDelegate.findUnique({
     where: { id: classroomId }
   })
 
