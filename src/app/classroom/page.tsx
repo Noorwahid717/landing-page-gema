@@ -503,43 +503,64 @@ export default function ClassroomPage() {
                 </div>
               </div>
             </div>
+            <Link
+              href="/student/profile"
+              className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+            >
+              <User className="w-4 h-4" />
+              Profile
+            </Link>
           </div>
 
           {/* Tab Navigation */}
-          <div className="flex gap-1 bg-gray-100 p-1 rounded-lg w-fit">
-            <button
-              onClick={() => setActiveTab('assignments')}
-              className={`px-4 py-2 rounded-md font-medium transition-colors flex items-center gap-2 ${
-                activeTab === 'assignments'
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-800'
-              }`}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex gap-1 bg-gray-100 p-1 rounded-lg">
+              <button
+                onClick={() => setActiveTab('assignments')}
+                className={`px-4 py-2 rounded-md font-medium transition-colors flex items-center gap-2 ${
+                  activeTab === 'assignments'
+                    ? 'bg-white text-blue-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                <BookOpenCheck className="w-4 h-4" />
+                Tugas & Pengumpulan
+              </button>
+              <button
+                onClick={() => setActiveTab('articles')}
+                className={`px-4 py-2 rounded-md font-medium transition-colors flex items-center gap-2 ${
+                  activeTab === 'articles'
+                    ? 'bg-white text-blue-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                <Newspaper className="w-4 h-4" />
+                Artikel & Tutorial
+              </button>
+              <button
+                onClick={() => setActiveTab('roadmap')}
+                className={`px-4 py-2 rounded-md font-medium transition-colors flex items-center gap-2 ${
+                  activeTab === 'roadmap'
+                    ? 'bg-white text-blue-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                <ListChecks className="w-4 h-4" />
+                Roadmap Proyek
+              </button>
+            </div>
+            <Link
+              href="/classroom/gema-classroom-1/live"
+              className="bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white px-5 py-2 rounded-lg flex items-center gap-2 transition-all shadow-lg transform hover:scale-105 font-medium"
             >
-              <BookOpenCheck className="w-4 h-4" />
-              Tugas & Pengumpulan
-            </button>
-            <button
-              onClick={() => setActiveTab('articles')}
-              className={`px-4 py-2 rounded-md font-medium transition-colors flex items-center gap-2 ${
-                activeTab === 'articles'
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-800'
-              }`}
-            >
-              <Newspaper className="w-4 h-4" />
-              Artikel & Tutorial
-            </button>
-            <button
-              onClick={() => setActiveTab('roadmap')}
-              className={`px-4 py-2 rounded-md font-medium transition-colors flex items-center gap-2 ${
-                activeTab === 'roadmap'
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-800'
-              }`}
-            >
-              <ListChecks className="w-4 h-4" />
-              Roadmap Proyek
-            </button>
+              <svg className="w-5 h-5 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+                <circle cx="10" cy="10" r="8" />
+              </svg>
+              🎥 Tonton Live Class
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-white text-red-600">
+                LIVE
+              </span>
+            </Link>
           </div>
         </div>
       </div>

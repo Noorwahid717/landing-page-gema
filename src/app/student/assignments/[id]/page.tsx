@@ -233,16 +233,25 @@ export default function StudentAssignmentDetail() {
                   {studentSession.studentId} • {studentSession.class}
                 </p>
               </div>
-              <button
-                onClick={() => {
-                  studentAuth.clearSession()
-                  router.push('/')
-                }}
-                className="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-red-600 transition-colors"
-              >
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout
-              </button>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => router.push('/student/profile')}
+                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                >
+                  <User className="w-4 h-4 mr-2" />
+                  Profile
+                </button>
+                <button
+                  onClick={() => {
+                    studentAuth.clearSession()
+                    router.push('/')
+                  }}
+                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Logout
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { studentAuth } from '@/lib/student-auth'
 import JSZip from 'jszip'
 import {
@@ -518,6 +519,22 @@ export default function PortfolioSubmissionPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-10">
       <div className="max-w-6xl mx-auto px-4 lg:px-6">
+        {/* Navigation Header */}
+        <div className="mb-6 flex items-center justify-between">
+          <Link 
+            href="/student/dashboard-simple"
+            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+          >
+            ← Kembali ke Dashboard
+          </Link>
+          <Link
+            href="/student/profile"
+            className="text-gray-600 hover:text-blue-600 text-sm font-medium px-3 py-1 rounded-lg hover:bg-blue-50 transition-colors"
+          >
+            👤 Profile
+          </Link>
+        </div>
+        
         <header className="mb-8">
           <p className="text-sm text-blue-600 font-semibold mb-2">Tugas Web Portfolio</p>
           <div className="flex flex-wrap items-center gap-3">

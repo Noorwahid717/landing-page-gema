@@ -7,22 +7,21 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test:e2e": "playwright test",
     "deploy": "vercel --prod",
     "deploy-preview": "vercel",
-    "_comment_build_original": "prisma generate && next build",
-    "_comment_postinstall": "prisma generate",
-    "_comment_db:generate": "prisma generate",
-    "_comment_db:push": "prisma db push",
-    "_comment_db:seed": "prisma db seed",
-    "_comment_db:seed-tutorials": "npx tsx prisma/seed-tutorial-articles.ts",
-    "_comment_db:update-first-tutorial": "npx tsx prisma/update-first-tutorial.ts",
-    "_comment_db:migrate": "bash migrate-to-postgres.sh",
+    "prisma:generate": "prisma generate",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:seed": "prisma db seed",
+    "db:seed-tutorials": "npx tsx prisma/seed-tutorial-articles.ts",
+    "db:seed-classroom": "npx tsx prisma/seed-classroom.ts",
+    "db:update-first-tutorial": "npx tsx prisma/update-first-tutorial.ts",
+    "db:migrate": "bash migrate-to-postgres.sh",
     "vercel:force-deploy": "vercel --prod --force",
-    "vercel:build": "npm run build"
+    "vercel:build": "npm run prisma:generate && npm run build"
   },
-  "_comment_prisma": {
-    "_comment_seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
-  },
+  
   "dependencies": {
     "@headlessui/react": "^2.2.7",
     "@heroicons/react": "^2.2.0",
@@ -54,6 +53,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.5.2",
+    "@playwright/test": "^1.50.0",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
     "typescript": "^5"
