@@ -13,7 +13,9 @@ export default withAuth(
     
     // Check if user is trying to access admin routes (except login)
     if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
-      
+      const userRole = typeof token?.role === 'string' ? token.role.toUpperCase() : ''
+      const userType = typeof token?.userType === 'string' ? token.userType : undefined
+
       // If no token, redirect to login
       if (!token) {
         console.log('Middleware - No token, redirecting to admin login')
@@ -21,14 +23,14 @@ export default withAuth(
         loginUrl.searchParams.set('callbackUrl', req.url)
         return NextResponse.redirect(loginUrl)
       }
-      
+
       // Check if user has admin role and is admin type
-      if ((token.role !== 'SUPER_ADMIN' && token.role !== 'ADMIN') || token.userType !== 'admin') {
-        console.log('Middleware - Invalid admin access:', token.role, token.userType)
+      if ((userRole !== 'SUPER_ADMIN' && userRole !== 'ADMIN') || userType !== 'admin') {
+        console.log('Middleware - Invalid admin access:', token?.role, token?.userType)
         return NextResponse.redirect(new URL('/admin/login', req.url))
       }
-      
-      console.log('Middleware - Admin access granted for role:', token.role)
+
+      console.log('Middleware - Admin access granted for role:', userRole)
     }
     
     // Allow all student routes to bypass NextAuth - they use custom authentication
@@ -69,7 +71,8 @@ export default withAuth(
         // For admin routes, require valid admin token
         if (pathname.startsWith('/admin')) {
           const hasValidToken = !!token
-          const hasValidRole = token?.role === 'SUPER_ADMIN' || token?.role === 'ADMIN'
+          const userRole = typeof token?.role === 'string' ? token.role.toUpperCase() : ''
+          const hasValidRole = userRole === 'SUPER_ADMIN' || userRole === 'ADMIN'
           const hasValidType = token?.userType === 'admin'
           console.log('Middleware authorized callback - Admin check:', hasValidToken, hasValidRole, hasValidType)
           return hasValidToken && hasValidRole && hasValidType
