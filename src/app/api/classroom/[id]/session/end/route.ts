@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 
 import { prisma } from '@/lib/prisma'
+import { ensureLiveSessionDelegate } from '@/lib/prisma-delegates'
 import { authOptions } from '@/lib/auth-config'
 
 export async function POST(request: NextRequest) {
@@ -34,7 +35,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Session id is required' }, { status: 400 })
   }
 
-  const liveSession = await prisma.liveSession.findUnique({
+  const liveSessionDelegate = ensureLiveSessionDelegate(prisma)
+
+  const liveSession = await liveSessionDelegate.findUnique({
     where: { id: sessionId }
   })
 
@@ -42,7 +45,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Live session not found' }, { status: 404 })
   }
 
-  const updatedSession = await prisma.liveSession.update({
+  const updatedSession = await liveSessionDelegate.update({
     where: { id: sessionId },
     data: {
       status: 'ended',
